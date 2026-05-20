@@ -1,0 +1,30 @@
+# Bytecode Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Environnements virtuels
+env/
+venv/
+.venv/
+envTDS/
+mlEnv/
+sgptEnv/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Cache divers
+.cache/
+*.pyc
+
+# IDE
+.vscode/
+.idea/
