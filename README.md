@@ -29,8 +29,9 @@ Consulter svp  [La documentation](docs/doc.md) particuliere de ce robot
 └── Evitement/             
     └──              
     └──              
-└── Evitement/             
-    
+└── docs/             
+    └──doc.md              
+
 
 ## Utilisation
 
@@ -39,9 +40,6 @@ cd MAIN
 
 # Afficher le plan sans bouger le robot
 python main.py --dry-run
-
-# Exécution réelle (sur le Raspberry Pi équipé du PiCar)
-python main.py --speed 40
 
 # Avec une carte personnalisée
 python main.py --map ma_carte.json --calibration ma_calib.json
@@ -56,7 +54,7 @@ python main.py --map ma_carte.json --calibration ma_calib.json
 ## Matériel
 
 - Raspberry Pi 5/4B/3B+
-- Adeept PiCar Pro V2.0 (châssis 4WD + bras 4-DOF + caméra + capteurs)
+- Adeept PiCar Pro V2.0 (châssis 2WD + bras 4-DOF + caméra + capteurs)
 - Batterie 7.4V + 2x 18650
 
 ---
