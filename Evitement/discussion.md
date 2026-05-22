@@ -273,3 +273,44 @@ On commence par quel module quand tu veux passer au code ?
 
 
 Claude is AI and can make mistakes. Please double-check responses.
+
+Exactement — et ça change un truc important dans l'implémentation.
+
+---
+
+## Ce que ça simplifie
+
+Le module ultrason est **déjà sur servo dédié** (CH1). Pas besoin de monter quoi que ce soit, pas de calibration mécanique à faire.
+
+Tu contrôles directement CH1 via le HAT V3.2 → le servo tourne → le HC-SR04 pointe → tu mesures. C'est le sweep natif.
+
+---
+
+## Ce que ça change dans l'architecture
+
+**Avant** (ce qu'on imaginait) : servo séparé à monter + synchroniser avec le HC-SR04.
+
+**Maintenant** : un seul appel HAT par position angulaire. Le sweep se résume à :
+
+```
+for angle in [0, 15, 30, ..., 180]:
+    set_servo(CH1, angle)
+    wait(stabilisation)
+    distances[angle] = mesure_hcsr04()
+```
+
+Propre, direct, déjà intégré dans le hardware.
+
+---
+
+## La seule subtilité qui reste
+
+CH1 va de 0° à 180° (potentiellement ~200° mécaniquement). Il faut **calibrer les butées réelles** : trouver la valeur PWM qui correspond à 0° et celle qui correspond à 180° pour ce servo précis, et ne jamais dépasser les butées mécaniques.
+
+Ensuite, après le sweep, tu **ramènes CH1 à 90°** (tout droit) avant de naviguer — sinon le robot avance en regardant de côté.
+
+---
+
+Le reste de l'architecture (VFH+, FSM, check frontal) reste identique. On a juste supprimé une couche de complexité hardware.
+
+On attaque quel module en premier ?
