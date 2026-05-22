@@ -1,112 +1,152 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
-arm.py — Contrôle du bras robotique 4-DOF (Adeept PiCar-Pro).
-
-Gère la séquence de prélèvement :
-  descendre → pause → remonter
-
-Utilise l'API ServoCtrl (RPIservo.py) pour piloter les servomoteurs
-via le PCA9685 en I2C.
+Module de contrôle du bras robotique du PiCar Pro.
+Utilise les servomoteurs via PCA9685 (ports servo 0-15).
 """
 
-import sys
-import os
 import time
-
-# ---------------------------------------------------------------------------
-# Ajout du chemin vers les modules Adeept
-# ---------------------------------------------------------------------------
-_ADEEPT_DIR = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    "..",
-    "Adeept_PiCar-Pro"
-)
-if _ADEEPT_DIR not in sys.path:
-    sys.path.insert(0, _ADEEPT_DIR)
+import threading
 
 try:
-    import RPIservo
+    import Adafruit_PCA9685
+    PCA_AVAILABLE = True
 except ImportError:
-    print("ERREUR : impossible d'importer RPIservo.py depuis Adeept_PiCar-Pro/")
-    print("Vérifiez que le dossier Adeept_PiCar-Pro existe et contient Server/RPIservo.py")
-    sys.exit(1)
+    PCA_AVAILABLE = False
+    print("[WARN] Adafruit_PCA9685 non disponible - mode simulation bras")
 
-# ---------------------------------------------------------------------------
+
 # Configuration des servos du bras
-# ---------------------------------------------------------------------------
-# Mapping des servos (index 0-7 sur le PCA9685) :
-#   0 : rotation base / caméra pan
-#   1 : épaule (shoulder)
-#   2 : coude (elbow) — c'est le servo principal pour descendre/remonter
-#   3 : poignet (wrist)
-#   4 : pince (gripper)
+# Sur le PiCar Pro avec bras manipulateur:
+# Servo 0: Base rotation (gauche/droite)
+# Servo 1: Épaule (haut/bas)
+# Servo 2: Coude (haut/bas)
+# Servo 3: Pince (ouvert/fermé)
+ARM_SERVOS = {
+    'base': 0,
+    'shoulder': 1,
+    'elbow': 2,
+    'gripper': 3,
+}
 
-SERVO_ELBOW = 2       # servo utilisé pour le mouvement vertical du bras
-ANGLE_DOWN = -45       # angle relatif (degrés) pour descendre
-ANGLE_UP = 0           # angle relatif pour remonter (position neutre)
-PAUSE_DURATION = 1.0   # temps de pause en position basse (secondes)
-MOVE_DELAY = 1.5       # délai pour laisser le servo atteindre sa position
-
-# ---------------------------------------------------------------------------
-# Instance globale du contrôleur de servos
-# ---------------------------------------------------------------------------
-_sc = None
-_initialized = False
+# Valeurs PWM pour les positions (duty cycle 100-560 = 0°-180°)
+# Ces valeurs sont à ajuster selon le montage mécanique
+PWM_POSITIONS = {
+    'base': {'center': 330, 'left': 200, 'right': 460},
+    'shoulder': {'up': 200, 'down': 450, 'neutral': 330},
+    'elbow': {'up': 250, 'down': 450, 'neutral': 350},
+    'gripper': {'open': 400, 'closed': 200, 'neutral': 300},
+}
 
 
-def init():
-    """Initialise le contrôleur de servos (à appeler une fois)."""
-    global _sc, _initialized
-    if not _initialized:
-        _sc = RPIservo.ServoCtrl()
-        _sc.moveInit()
-        _sc.start()
-        _initialized = True
+class ArmController:
+    """Contrôleur du bras robotique."""
+
+    def __init__(self):
+        self.pwm = None
+        if PCA_AVAILABLE:
+            try:
+                self.pwm = Adafruit_PCA9685.PCA9685()
+                self.pwm.set_pwm_freq(50)
+                self.reset_position()
+            except Exception as e:
+                print(f"[ERROR] Échec init bras: {e}")
+                self.pwm = None
+
+    def set_servo(self, servo_name, pwm_value):
+        """Positionne un servo à une valeur PWM donnée."""
+        if self.pwm is None:
+            return
+        channel = ARM_SERVOS.get(servo_name)
+        if channel is not None:
+            self.pwm.set_pwm(channel, 0, int(pwm_value))
+
+    def reset_position(self):
+        """Position neutre du bras."""
+        print("[ARM] Reset position")
+        self.set_servo('base', PWM_POSITIONS['base']['center'])
+        self.set_servo('shoulder', PWM_POSITIONS['shoulder']['neutral'])
+        self.set_servo('elbow', PWM_POSITIONS['elbow']['neutral'])
+        self.set_servo('gripper', PWM_POSITIONS['gripper']['open'])
+        time.sleep(0.5)
+
+    def open_gripper(self):
+        """Ouvre la pince."""
+        print("[ARM] Ouverture pince")
+        self.set_servo('gripper', PWM_POSITIONS['gripper']['open'])
         time.sleep(0.3)
+
+    def close_gripper(self):
+        """Ferme la pince."""
+        print("[ARM] Fermeture pince")
+        self.set_servo('gripper', PWM_POSITIONS['gripper']['closed'])
+        time.sleep(0.3)
+
+    def move_down(self):
+        """Descend le bras vers le sol."""
+        print("[ARM] Descente")
+        self.set_servo('shoulder', PWM_POSITIONS['shoulder']['down'])
+        self.set_servo('elbow', PWM_POSITIONS['elbow']['down'])
+        time.sleep(1.0)
+
+    def move_up(self):
+        """Remonte le bras."""
+        print("[ARM] Remontée")
+        self.set_servo('shoulder', PWM_POSITIONS['shoulder']['up'])
+        self.set_servo('elbow', PWM_POSITIONS['elbow']['up'])
+        time.sleep(1.0)
+
+
+# Singleton
+_arm_ctrl = None
+
+def get_arm():
+    """Retourne l'instance unique du contrôleur bras."""
+    global _arm_ctrl
+    if _arm_ctrl is None:
+        _arm_ctrl = ArmController()
+    return _arm_ctrl
+
+
+def perform_sample():
+    """
+    Séquence complète de prélèvement:
+    descendre → pause → remonter
+    """
+    arm = get_arm()
+
+    print("\n[ARM] === DÉBUT PRÉLÈVEMENT ===")
+
+    # 1. Ouvrir la pince
+    arm.open_gripper()
+
+    # 2. Descendre vers l'échantillon
+    arm.move_down()
+
+    # 3. Fermer la pince (saisir)
+    arm.close_gripper()
+
+    # 4. Pause (tenir l'échantillon)
+    print("[ARM] Pause prélèvement (1s)")
+    time.sleep(1.0)
+
+    # 5. Remonter
+    arm.move_up()
+
+    # 6. Réinitialiser
+    arm.reset_position()
+
+    print("[ARM] === FIN PRÉLÈVEMENT ===\n")
 
 
 def cleanup():
-    """Replace le bras en position neutre et arrête le thread servo."""
-    global _sc, _initialized
-    if _initialized and _sc is not None:
-        _sc.moveAngle(SERVO_ELBOW, ANGLE_UP)
-        time.sleep(0.5)
-        # Le thread ServoCtrl tourne en boucle, on le laisse pour
-        # d'éventuelles autres utilisations. Pour un arrêt complet
-        # il faudrait un mécanisme de sortie explicite.
-    _initialized = False
+    """Nettoie les ressources du bras."""
+    global _arm_ctrl
+    if _arm_ctrl:
+        _arm_ctrl.reset_position()
+        _arm_ctrl = None
 
 
-def sample():
-    """
-    Exécute la séquence de prélèvement :
-      1. Descendre le bras
-      2. Pause (simule la prise d'échantillon)
-      3. Remonter le bras
-    """
-    init()
-
-    print("  Bras → descente")
-    _sc.moveAngle(SERVO_ELBOW, ANGLE_DOWN)
-    time.sleep(MOVE_DELAY)
-
-    print("  Bras → prélèvement en cours...")
-    time.sleep(PAUSE_DURATION)
-
-    print("  Bras → remontée")
-    _sc.moveAngle(SERVO_ELBOW, ANGLE_UP)
-    time.sleep(MOVE_DELAY)
-
-
-# ---------------------------------------------------------------------------
-# Exécution directe (test)
-# ---------------------------------------------------------------------------
-if __name__ == "__main__":
-    print("Test bras : séquence de prélèvement.")
-    try:
-        sample()
-        print("Test terminé.")
-    except KeyboardInterrupt:
-        print("\nInterruption.")
-    finally:
-        cleanup()
+if __name__ == '__main__':
+    print("Test bras robotique")
+    perform_sample()
