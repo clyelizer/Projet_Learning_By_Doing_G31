@@ -1,0 +1,3 @@
+decrire chaq decision prise par rapport aux moyens de fourniture des resultats
+
+synthess vocale,...

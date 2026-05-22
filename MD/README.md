@@ -117,3 +117,113 @@ Tous les endpoints sont en `/api/` :
 - `GET  /api/samples` — historique des échantillons
 - `GET  /api/logs` — historique des logs
 - `GET  /api/events` — SSE (logs temps réel)
+
+
+
+
+------------
+Ensemble des calculs mathématiques, pour déplacer le robot d'un point A vers un point B. [voir en detail ](Planning.md) )
+
+---
+
+## Données d'entrée
+
+| Paramètre | Description |
+|-----------|-------------|
+| $(x_A, y_A)$ | Coordonnées du point de départ A (cm) |
+| $(x_B, y_B)$ | Coordonnées du point d'arrivée B (cm) |
+| $\theta_{\text{actuel}}$ | Orientation actuelle du robot en degrés (heading, 0° = axe +X) |
+| $v_{\text{lin}}$ | Vitesse linéaire du robot (cm/s), issue de `calibration.json` |
+| $v_{\text{rot}}$ | Vitesse angulaire du robot (°/s), issue de `calibration.json` |
+
+---
+
+## Étape 1 — Vecteur de déplacement
+
+On calcule d'abord les différences de coordonnées entre B et A :
+
+$$
+\Delta x = x_B - x_A
+$$
+
+$$
+\Delta y = y_B - y_A
+$$
+
+---
+
+## Étape 2 — Distance à parcourir
+
+La distance euclidienne entre A et B est :
+
+$$
+d = \sqrt{(\Delta x)^2 + (\Delta y)^2}
+$$
+
+*En unités : centimètres (cm).*
+
+---
+
+## Étape 3 — Angle cible (cap vers B)
+
+On détermine l'angle absolu que le robot doit avoir pour être orienté vers B. On utilise la fonction `atan2` qui gère tous les quadrants :
+
+$$
+\theta_{\text{cible}} = \operatorname{atan2}(\Delta y, \Delta x)
+$$
+
+**Conversion en degrés** (car les capteurs et moteurs utilisent des degrés) :
+
+$$
+\theta_{\text{cible}}^{\circ} = \theta_{\text{cible}} \times \frac{180}{\pi}
+$$
+
+*Résultat entre -180° et +180°.*
+
+---
+
+## Étape 4 — Angle de rotation à effectuer
+
+Le robot doit tourner de la différence entre son orientation actuelle et l'angle cible :
+
+$$
+\Delta\theta = \theta_{\text{cible}}^{\circ} - \theta_{\text{actuel}}
+$$
+
+---
+
+## Étape 5 — Normalisation de l'angle (optimisation du virage)
+
+Pour que le robot tourne toujours par le chemin le plus court (jamais plus de 180°) :
+
+$$
+\Delta\theta_{\text{norm}} = ((\Delta\theta + 180^{\circ}) \bmod 360^{\circ}) - 180^{\circ}
+$$
+
+**Interprétation :**
+- Si $\Delta\theta_{\text{norm}} > 0$ : tourner à **gauche** (sens trigonométrique / anti-horaire)
+- Si $\Delta\theta_{\text{norm}} < 0$ : tourner à **droite** (sens horaire)
+- Si $\Delta\theta_{\text{norm}} = 0$ : déjà bien orienté
+
+---
+
+## Étape 6 — Conversion en durées moteur
+
+Grâce aux constantes de calibration, on transforme les grandeurs géométriques en temps de commande moteur.
+
+### Durée de rotation
+
+$$
+t_{\text{rot}} = \frac{|\Delta\theta_{\text{norm}}|}{v_{\text{rot}}}
+$$
+
+*Unités : secondes (s).*
+
+### Durée d'avance linéaire
+
+$$
+t_{\text{avance}} = \frac{d}{v_{\text{lin}}}
+$$
+
+*Unités : secondes (s).*
+
