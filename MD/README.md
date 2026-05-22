@@ -38,11 +38,20 @@ Consulter svp  [La documentation](docs/doc.md) particuliere de ce robot
 ```bash
 cd MAIN
 
-# Afficher le plan sans bouger le robot
+# Fichiers par défaut (map.json, calibration.json)
+python main.py
+
+# Afficher le plan sans bouger le robot (simulation)
 python main.py --dry-run
 
-# Avec une carte personnalisée
-python main.py --map ma_carte.json --calibration ma_calib.json
+# Avec des fichiers personnalisés
+python main.py --map ma_carte.json --calib ma_calib.json
+
+# Combiner plusieurs options
+python main.py --dry-run --map mission1.json --calib terrain_ouest.json
+
+# Aide complète
+python main.py --help
 ```
 
 ## Fonctionnement
@@ -57,72 +66,62 @@ python main.py --map ma_carte.json --calibration ma_calib.json
 - Adeept PiCar Pro V2.0 (châssis 2WD + bras 4-DOF + caméra + capteurs)
 - Batterie 7.4V + 2x 18650
 
+## Capteurs et composants
+
+Le **PiCar-Pro V2** embarque une gamme complète de périphériques. 👉 [**Documentation complète du matériel**](materiel.md)
+
+| Composant | Description | Broche/Canal |
+|-----------|-------------|----------|
+| **Caméra USB** | Capture vidéo pour vision par ordinateur | USB |
+| **Servomoteurs** | 8 servos PCA9685 pour mobilité et articulations du bras | CH0–CH7 |
+| **Ultrason HC-SR04** | Détection d'obstacles (2 cm à 4 m) | GPIO23 (Trig), GPIO24 (Echo) |
+| **Capteurs IR (×3)** | Suivi de ligne infrarouge (S1/S2/S3) | GPIO17, GPIO27, GPIO22 |
+| **LEDs (×3)** | Signalisation visuelle | GPIO9, GPIO25, GPIO11 |
+| **Buzzer** | Alertes sonores | GPIO18 |
+| **Moteurs DC (×2)** | Propulsion des roues arrière (M1, M2) | CH12–CH15 |
+| **Module OLED** | Affichage d'informations | I2C |
+| **LED RGB WS2812** | Éclairage d'ambiance programmable | GPIO |
+| **Récepteur IR** | Réception télécommande infrarouge | GPIO |
+
+### Contrôleur PCA9685
+
+Le **Robot HAT V3.2** intègre un PCA9685 (adresse I2C `0x5f`, fréquence 50 Hz) générant 16 signaux PWM indépendants :
+- **CH0–CH7** : servomoteurs (direction, ultrason, bras, pince)
+- **CH12–CH15** : moteurs DC via ponts en H
+
+### Installation
+
+```bash
+sudo apt update && sudo apt install git -y
+git clone https://github.com/adeept/Adeept_PiCar-Pro.git
+cd Adeept_PiCar-Pro
+sudo python3 setup.py
+
+# Vérifier la connexion I2C
+i2cdetect -y 1  # L'adresse 0x5f doit apparaître
+```
+
+### Pilotage à distance
+
+```bash
+# SSH — terminal uniquement (recommandé pour le développement)
+ssh pi@<IP_ROBOT>
+
+# VNC — bureau complet (pour voir la caméra)
+# Activer dans raspi-config → Interface Options → VNC → Yes
+```
+
 ---
 
 ## Interface web (`MAIN/web/`)
 
-Interface de contrôle et monitoring accessible depuis un navigateur.
+*À développer — actuellement non implémentée.*
 
-### Structure
+---
 
-```
-MAIN/web/
-├── app.py                ← backend Flask (API REST + SSE logs temps réel)
-├── database.py           ← SQLite (persistance : missions, échantillons, logs)
-├── requirements.txt      ← dépendances Python
-├── hardware/
-│   └── simulator.py      ← simulation matérielle (développement sans Pi)
-├── templates/
-│   └── index.html        ← frontend (dashboard + pilotage + historique)
-└── static/               ← fichiers statiques (CSS/JS/images)
-```
+## Calculs mathématiques
 
-### Démarrage
-
-```bash
-cd MAIN/web
-pip install -r requirements.txt
-
-# Mode simulation (développement PC, recommandé)
-SIMULATE=1 python3 app.py
-
-# Mode réel (Raspberry Pi avec PiCar)
-SIMULATE=0 python3 app.py
-```
-
-Ouvrir [http://localhost:5000](http://localhost:5000) dans le navigateur.
-
-### Fonctionnalités
-
-| Fonction | Description |
-|----------|-------------|
-| **Joystick** | Pilotage manuel (direction, angle, durée) |
-| **Collecte** | Prélèvement d'échantillons avec le bras |
-| **Dépôt analyse** | Transfert des échantillons vers tubes d'analyse |
-| **Mission autonome** | Lance `main.py` et affiche la progression en direct |
-| **Logs temps réel** | SSE — tous les événements visibles sans rafraîchir |
-| **Historique** | Missions passées, échantillons, logs persistés en DB |
-
-### API REST
-
-Tous les endpoints sont en `/api/` :
-
-- `GET  /api/state` — état persistant du robot
-- `POST /api/move` — commande manuelle `{dir, angle, t}`
-- `POST /api/collect` — prélèvement `{n}`
-- `POST /api/deposit` — dépôt analyse `{tpc, ept}`
-- `POST /api/mission/start` — lance mission `{speed, map, calibration}`
-- `POST /api/mission/stop` — interrompt la mission
-- `GET  /api/missions` — historique des missions
-- `GET  /api/samples` — historique des échantillons
-- `GET  /api/logs` — historique des logs
-- `GET  /api/events` — SSE (logs temps réel)
-
-
-
-
-------------
-Ensemble des calculs mathématiques, pour déplacer le robot d'un point A vers un point B. [voir en detail ](Planning.md) )
+Ensemble des calculs pour déplacer le robot d'un point A vers un point B. [Voir en détail](Planning.md)
 
 ---
 
