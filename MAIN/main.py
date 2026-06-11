@@ -12,6 +12,7 @@ Usage:
     python main.py --dry-run --map map.json --calib calib.json
 """
 
+import os
 import sys
 import signal
 import argparse
@@ -19,6 +20,9 @@ import planner
 import executor
 import arm
 import time
+
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def signal_handler(sig, frame):
@@ -45,15 +49,15 @@ Exemples:
     parser.add_argument(
         '--map',
         type=str,
-        default='map.json',
-        help="Chemin vers le fichier de carte (défaut: map.json)"
+        default=os.path.join(SCRIPT_DIR, '..', 'Config', 'map.json'),
+        help="Chemin vers le fichier de carte (défaut: Config/map.json)"
     )
     
     parser.add_argument(
         '--calib',
         type=str,
-        default='calibration.json',
-        help="Chemin vers le fichier de calibration (défaut: calibration.json)"
+        default=os.path.join(SCRIPT_DIR, '..', 'Config', 'calibration.json'),
+        help="Chemin vers le fichier de calibration (défaut: Config/calibration.json)"
     )
     
     parser.add_argument(
@@ -79,8 +83,8 @@ def main():
     print("=" * 50)
     
     # Afficher les fichiers utilisés
-    print(f"\n📍 Carte : {args.map}")
-    print(f"📍 Calibration : {args.calib}")
+    print(f"\n📍 Carte : {os.path.normpath(args.map)}")
+    print(f"📍 Calibration : {os.path.normpath(args.calib)}")
     if args.dry_run:
         print("🔍 Mode : DRY-RUN (simulation)")
 
