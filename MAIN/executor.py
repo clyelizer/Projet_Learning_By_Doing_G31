@@ -47,7 +47,7 @@ class MotorController:
         self.pwm = None
         if PCA_AVAILABLE:
             try:
-                self.pwm = Adafruit_PCA9685.PCA9685()
+                self.pwm = Adafruit_PCA9685.PCA9685(address=0x5f)
                 self.pwm.set_pwm_freq(50)
                 self.center_steering()
                 self.stop_all()
