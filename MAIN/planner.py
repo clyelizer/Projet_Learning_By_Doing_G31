@@ -105,8 +105,24 @@ def generate_plan(map_file, calibration_file):
                 'duration': round(move['distance_cm'] / cm_per_sec, 3)
             })
 
-        # Ajout de l'action au point d'arrivée
-        if wp.get('action'):
+        # Ajout des actions au point d'arrivée
+        if wp.get('probe', False):
+            plan.append({
+                'type': 'action',
+                'action': 'probe',
+                'waypoint_id': wp['id']
+            })
+        
+        if wp.get('photos', 0) > 0:
+            plan.append({
+                'type': 'action',
+                'action': 'photo',
+                'waypoint_id': wp['id'],
+                'count': wp['photos']
+            })
+        
+        # Rétrocompatibilité: ancien champ 'action' (déprécié)
+        if wp.get('action') and not wp.get('probe') and not wp.get('photos'):
             plan.append({
                 'type': 'action',
                 'action': wp['action'],
@@ -134,13 +150,22 @@ def print_plan(plan):
             print(f"   Distance : {cmd['distance_cm']:.2f} cm")
             print(f"   Durée    : {cmd['duration']:.3f} s")
         elif cmd['type'] == 'action':
-            print(f"{i}. ACTION : {cmd['action'].upper()}")
+            if cmd['action'] == 'photo':
+                print(f"{i}. PHOTO (x{cmd.get('count', 1)})")
+            else:
+                print(f"{i}. ACTION : {cmd['action'].upper()}")
             print(f"   Waypoint ID : {cmd['waypoint_id']}")
         print()
 
 
 if __name__ == '__main__':
-    plan = generate_plan('map.json', 'calibration.json')
+    import os as _os
+    _here = _os.path.dirname(_os.path.abspath(__file__))
+    _cfg = _os.path.join(_here, '..', 'Config')
+    plan = generate_plan(
+        _os.path.join(_cfg, 'map.json'),
+        _os.path.join(_cfg, 'calibration.json')
+    )
     print_plan(plan)
 
     # Sauvegarde du plan

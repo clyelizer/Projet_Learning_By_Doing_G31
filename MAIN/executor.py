@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 """
 Module d'exécution pour modèle 2WD arrière + direction servo avant.
-Moteurs arrière : 0 (gauche), 1 (droite)
-Servo direction : channel 0 (roues avant)
+Servo direction : CH0 (roues avant)
+Moteurs arrière M1 (gauche) : CH14 (IN1), CH15 (IN2)
+Moteurs arrière M2 (droite) : CH13 (IN1), CH12 (IN2)
+Channels CH1-CH4 réservés au bras robotique (ne pas toucher).
 """
 
 import time
@@ -20,8 +22,8 @@ except ImportError:
 # --- CONFIGURATION MATERIELLE ---
 # Moteurs arrière (2 roues motrices indépendantes)
 MOTOR_CHANNELS = {
-    'left_rear':  (0, 1),   # M0 : roue arrière gauche
-    'right_rear': (2, 3),   # M1 : roue arrière droite
+    'left_rear':  (14, 15),  # M1 gauche : IN1=CH14, IN2=CH15
+    'right_rear': (13, 12),  # M2 droite : IN1=CH13, IN2=CH12
 }
 
 # Servo de direction sur les roues avant
@@ -133,7 +135,11 @@ def get_controller():
 
 
 def run(command):
-    """Exécute une commande du plan."""
+    """
+    Exécute une commande de mouvement.
+    Gère uniquement les types 'rotate' et 'forward'.
+    Les actions (probe, photo) sont gérées par main.py.
+    """
     ctrl = get_controller()
     cmd_type = command['type']
     
@@ -161,16 +167,8 @@ def run(command):
         ctrl.stop_all()
         print("[EXEC] Avance terminée")
     
-    elif cmd_type == 'action':
-        action = command['action']
-        wp_id = command['waypoint_id']
-        print(f"[EXEC] Action '{action}' au waypoint {wp_id}")
-        if action == 'sample':
-            import arm
-            arm.perform_sample()
-    
     else:
-        print(f"[WARN] Commande inconnue: {cmd_type}")
+        print(f"[WARN] Commande inconnue dans executor: {cmd_type}")
 
 
 def cleanup():

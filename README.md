@@ -20,17 +20,20 @@ Consulter svp  [La documentation](docs/doc.md) particuliere de ce robot
 .
 ├── README.md                     ← ce fichier
 ├── MAIN/                         ← système autonome (à déployer sur le Pi)
-│   ├── map.json                  ← carte du terrain (départ + waypoints)
-│   ├── calibration.json          ← constantes de calibration (cm/s, °/s)
+│   ├── main.py                   ← point d'entrée (orchestration du pipeline)
 │   ├── planner.py                ← génération du plan de déplacement
-│   ├── executor.py               ← exécution moteur via l'API Adeept
-│   ├── arm.py                    ← contrôle du bras robotique (prélèvement)
-│   └── main.py                   ← point d'entrée (orchestration)
-└── Evitement/             
-    └──              
-    └──              
-└── docs/             
-    └──doc.md              
+│   ├── executor.py               ← exécution moteur (mouvement uniquement)
+│   ├── arm.py                    ← contrôle du bras robotique (sonde NPK)
+│   ├── sensor_npk.py             ← capteur sol RS485/Modbus (humidité, temp, EC, pH)
+│   ├── camera.py                 ← capture photo via Picamera2
+│   ├── image_processor.py        ← traitement asynchrone des images (pipeline IA)
+│   ├── data_logger.py            ← agrégation des données mission → JSON
+│   └── sample/                   ← scripts de test capteur NPK (référence)
+├── Config/
+│   ├── map.json                  ← carte du terrain (départ + waypoints)
+│   └── calibration.json          ← constantes de calibration (cm/s, °/s, caméra)
+├── Results/                      ← photos capturées + résultats JSON
+└── Evitement/                    ← système d'évitement d'obstacles (VFH+)
 
 
 ## Utilisation
@@ -56,9 +59,14 @@ python main.py --help
 
 ## Fonctionnement
 
-1. **Préparation** : on définit les points de prélèvement dans `map.json` et on mesure les constantes dans `calibration.json`
+1. **Préparation** : on définit les points de mesure dans `Config/map.json` et on mesure les constantes dans `Config/calibration.json`
 2. **Planification** : `planner.py` calcule les angles, distances et durées
-3. **Exécution** : `main.py` lance le robot qui se déplace de point en point et effectue les prélèvements avec le bras
+3. **Exécution** : `main.py` orchestre le pipeline complet :
+   - Déplacement autonome vers chaque waypoint (`executor.py`)
+   - À chaque arrêt : descente du capteur NPK (`arm.py`), mesure du sol (`sensor_npk.py`), remontée
+   - Capture de N photos du sol (`camera.py`)
+   - Traitement asynchrone des images (`image_processor.py`)
+   - Agrégation des résultats dans `Results/results.json` (`data_logger.py`)
 
 ## Matériel
 

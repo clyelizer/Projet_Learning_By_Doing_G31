@@ -136,6 +136,19 @@ $$
 **Commandes générées :**
 - Tourner à gauche pendant **0.86 s**
 - Avancer pendant **2.92 s**
+- Si le waypoint a `"probe": true` → commande `action` de type `probe` (mesure NPK)
+- Si le waypoint a `"photos": N` → commande `action` de type `photo` (N captures)
+
+---
+
+## Nouveaux champs waypoint (map.json)
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `probe` | bool | Si `true`, déclenche une mesure NPK (descente capteur → lecture → remontée) |
+| `photos` | int | Nombre de photos à prendre du sol à cet arrêt (0 = pas de photo) |
+
+Ces champs remplacent l'ancien champ `action` qui était limité à `"sample"` (prélèvement avec pince, désormais déprécié).
 
 ---
 
@@ -143,7 +156,7 @@ $$
 
 | Situation | Traitement |
 |-----------|------------|
-| $d = 0$ | Le point B est identique à A : aucun déplacement, uniquement l'action (prélèvement) |
+| $d = 0$ | Le point B est identique à A : aucun déplacement, uniquement l'action (mesure NPK + photo) |
 | $\Delta\theta_{\text{norm}} = 0$ | Pas de rotation nécessaire, avancer directement |
 | $\Delta\theta_{\text{norm}} = \pm 180^{\circ}$ | Demi-tour : le sens (gauche/droite) est indifférent, choisir arbitrairement |
 | Points alignés sur un axe | `atan2` gère correctement ($\Delta x = 0$ ou $\Delta y = 0$) |

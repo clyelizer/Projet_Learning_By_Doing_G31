@@ -2,8 +2,11 @@
 # -*- coding: utf-8 -*-
 """
 Module de contrôle du bras robotique.
-Servos : 1=base, 2=épaule, 3=coude, 4=pince
+Servos : 1=base, 2=épaule, 3=coude, 4=pince (déprécié — remplacé par capteur NPK)
 Le channel 0 est réservé au servo de direction des roues avant.
+
+Le capteur NPK remplace physiquement la pince. Les fonctions de prélèvement
+(lower_probe / raise_probe) descendent le capteur dans le sol et le remontent.
 """
 
 import time
@@ -22,7 +25,7 @@ ARM_SERVOS = {
     'base':     1,   # Base rotation du bras
     'shoulder': 2,   # Épaule haut/bas
     'elbow':    3,   # Coude
-    'gripper':  4,   # Pince ouvert/fermé
+    'gripper':  4,   # Pince (déprécié — le capteur NPK est monté ici)
 }
 
 # Valeurs PWM (0-180° ≈ 100-560) — À AJUSTER selon votre montage
@@ -59,27 +62,24 @@ class ArmController:
         self.set_servo('base', PWM_POSITIONS['base']['center'])
         self.set_servo('shoulder', PWM_POSITIONS['shoulder']['neutral'])
         self.set_servo('elbow', PWM_POSITIONS['elbow']['neutral'])
-        self.set_servo('gripper', PWM_POSITIONS['gripper']['open'])
         time.sleep(0.5)
     
-    def open_gripper(self):
-        print("[ARM] Ouverture pince")
-        self.set_servo('gripper', PWM_POSITIONS['gripper']['open'])
-        time.sleep(0.3)
-    
-    def close_gripper(self):
-        print("[ARM] Fermeture pince")
-        self.set_servo('gripper', PWM_POSITIONS['gripper']['closed'])
-        time.sleep(0.3)
-    
-    def move_down(self):
-        print("[ARM] Descente")
+    def lower_probe(self):
+        """
+        Descend le capteur NPK dans le sol.
+        Abaisse l'épaule et le coude pour insérer le capteur.
+        """
+        print("[ARM] Descente sonde NPK dans le sol")
         self.set_servo('shoulder', PWM_POSITIONS['shoulder']['down'])
         self.set_servo('elbow', PWM_POSITIONS['elbow']['down'])
         time.sleep(1.0)
     
-    def move_up(self):
-        print("[ARM] Remontée")
+    def raise_probe(self):
+        """
+        Remonte le capteur NPK hors du sol.
+        Relève l'épaule et le coude pour extraire le capteur.
+        """
+        print("[ARM] Remontée sonde NPK")
         self.set_servo('shoulder', PWM_POSITIONS['shoulder']['up'])
         self.set_servo('elbow', PWM_POSITIONS['elbow']['up'])
         time.sleep(1.0)
@@ -94,21 +94,6 @@ def get_arm():
         _arm_ctrl = ArmController()
     return _arm_ctrl
 
-
-def perform_sample():
-    """Séquence complète de prélèvement."""
-    arm = get_arm()
-    print("\n[ARM] === DÉBUT PRÉLÈVEMENT ===")
-    arm.open_gripper()
-    arm.move_down()
-    arm.close_gripper()
-    print("[ARM] Pause prélèvement (1s)")
-    time.sleep(1.0)
-    arm.move_up()
-    arm.reset_position()
-    print("[ARM] === FIN PRÉLÈVEMENT ===\n")
-
-
 def cleanup():
     global _arm_ctrl
     if _arm_ctrl:
@@ -117,8 +102,12 @@ def cleanup():
 
 
 if __name__ == '__main__':
-    print("Test bras robotique")
-    perform_sample()
+    print("Test bras robotique — sonde NPK")
+    arm = get_arm()
+    arm.lower_probe()
+    time.sleep(1.5)
+    arm.raise_probe()
+    arm.reset_position()
 
 
 

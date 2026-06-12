@@ -13,13 +13,15 @@
       "id": 1,
       "x": 60,
       "y": 40,
-      "action": "sample"
+      "probe": true,
+      "photos": 3
     },
     {
       "id": 2,
       "x": 120,
       "y": 70,
-      "action": "sample"
+      "probe": true,
+      "photos": 3
     }
   ]
 }
