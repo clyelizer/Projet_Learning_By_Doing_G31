@@ -1,0 +1,10 @@
+{
+  "_note": "deg_per_sec doit être RECALIBRÉ après le passage au virage en courbe (arc turn). motor_speed contrôle la puissance PWM (0.0=arrêt, 1.0=max). Après changement de motor_speed, cm_per_sec et deg_per_sec doivent être re-mesurés.",
+  "cm_per_sec": 20,
+  "deg_per_sec": 36,
+  "motor_speed": 0.1,
+  "photo_delay_s": 0.5,
+  "probe_pause_s": 1.5,
+  "sensor_port": "/dev/ttyACM0",
+  "sensor_baudrate": 9600
+}

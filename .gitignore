@@ -28,3 +28,15 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+.env
+
+# Outils internes
+.qwen/
+
+# Données runtime (générées par le robot)
+data/results.json
+data/photos/
+data/audio/
+
+# Backups
+backups/

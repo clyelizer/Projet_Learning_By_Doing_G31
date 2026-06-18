@@ -22,8 +22,8 @@ except ImportError:
 # --- CONFIGURATION MATERIELLE ---
 # Moteurs arrière (2 roues motrices indépendantes)
 MOTOR_CHANNELS = {
-    'left_rear':  (14, 15),  # M1 gauche : IN1=CH14, IN2=CH15
-    'right_rear': (13, 12),  # M2 droite : IN1=CH13, IN2=CH12
+    'left_rear':  (15, 14),  # M1 gauche : IN1=CH15, IN2=CH14 (inversé pour cohérence câblage)
+    'right_rear': (12, 13),  # M2 droite : IN1=CH12, IN2=CH13 (inversé pour cohérence câblage)
 }
 
 # Servo de direction sur les roues avant
@@ -38,8 +38,8 @@ STEERING_PWM = {
 
 # Valeurs PWM moteurs (pont en H)
 PWM_STOP = 0
-PWM_FORWARD = 4095
-PWM_BACKWARD = 4095
+PWM_MAX = 4095  # 100% duty cycle (vitesse max)
+PWM_DEFAULT = 2048  # 50% duty cycle (vitesse par défaut si motor_speed non défini)
 
 
 class MotorController:
@@ -47,6 +47,7 @@ class MotorController:
     
     def __init__(self):
         self.pwm = None
+        self._motor_pwm = PWM_DEFAULT  # vitesse par défaut: 50%
         if PCA_AVAILABLE:
             try:
                 self.pwm = Adafruit_PCA9685.PCA9685(address=0x5f)
@@ -57,17 +58,35 @@ class MotorController:
                 print(f"[ERROR] Échec init PCA9685: {e}")
                 self.pwm = None
     
+    def set_motor_speed(self, fraction):
+        """
+        Définit la vitesse des moteurs (0.0 à 1.0).
+        
+        Args:
+            fraction: float entre 0.0 (arrêt) et 1.0 (vitesse max)
+        """
+        fraction = max(0.0, min(1.0, fraction))
+        self._motor_pwm = int(PWM_MAX * fraction)
+        print(f"[EXEC] Vitesse moteurs réglée à {fraction*100:.0f}% (PWM={self._motor_pwm})")
+    
     def _set_motor(self, motor_name, direction):
-        """Contrôle un moteur arrière individuel."""
+        """Contrôle un moteur arrière individuel.
+
+        Note: la polarité IN1/IN2 dépend du câblage physique du pont H.
+        Si le robot recule quand il doit avancer, inverser ch_a↔ch_b
+        dans MOTOR_CHANNELS (plutôt que toucher à cette méthode).
+        """
         if self.pwm is None:
             return
         ch_a, ch_b = MOTOR_CHANNELS[motor_name]
+        # forward:  IN1=PWM, IN2=LOW  → moteur tourne vers l'avant
+        # backward: IN1=LOW, IN2=PWM  → moteur tourne vers l'arrière
         if direction == 'forward':
-            self.pwm.set_pwm(ch_a, 0, PWM_FORWARD)
+            self.pwm.set_pwm(ch_a, 0, self._motor_pwm)
             self.pwm.set_pwm(ch_b, 0, 0)
         elif direction == 'backward':
             self.pwm.set_pwm(ch_a, 0, 0)
-            self.pwm.set_pwm(ch_b, 0, PWM_BACKWARD)
+            self.pwm.set_pwm(ch_b, 0, self._motor_pwm)
         else:
             self.pwm.set_pwm(ch_a, 0, 0)
             self.pwm.set_pwm(ch_b, 0, 0)
@@ -99,29 +118,30 @@ class MotorController:
     
     def rotate_left(self):
         """
-        Rotation sur place vers la gauche.
-        Servo centré (ou légèrement gauche si besoin),
-        moteur gauche recule, moteur droit avance.
+        Virage en courbe vers la gauche (2WD car-style).
+        Servo tourné à gauche, les deux moteurs avancent.
+        Le robot décrit un arc de cercle — PAS une rotation sur place.
         """
-        self.center_steering()
-        self._set_motor('left_rear', 'backward')
+        self._set_steering('left')
+        self._set_motor('left_rear', 'forward')
         self._set_motor('right_rear', 'forward')
     
     def rotate_right(self):
         """
-        Rotation sur place vers la droite.
-        Servo centré,
-        moteur gauche avance, moteur droit recule.
+        Virage en courbe vers la droite (2WD car-style).
+        Servo tourné à droite, les deux moteurs avancent.
+        Le robot décrit un arc de cercle — PAS une rotation sur place.
         """
-        self.center_steering()
+        self._set_steering('right')
         self._set_motor('left_rear', 'forward')
-        self._set_motor('right_rear', 'backward')
+        self._set_motor('right_rear', 'forward')
     
     def stop_all(self):
         """Arrête les moteurs et centre la direction."""
         self._set_motor('left_rear', 'stop')
         self._set_motor('right_rear', 'stop')
         self.center_steering()
+        time.sleep(0.3)  # délai pour que le servo revienne physiquement au centre
 
 
 # Singleton

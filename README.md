@@ -12,36 +12,76 @@ Attention: C'est un modèle voiture classique (2WD arrière + direction servo av
 | Consommation     | Faible                                | Plus élevée                |
 | Code             | Plus simple (2 moteurs)               | 4 moteurs à synchroniser   |
 
-Consulter svp  [La documentation](docs/doc.md) particuliere de ce robot
+Consulter svp  [La documentation](docs/main_doc.md) particuliere de ce robot
 
 ## Structure du projet
 
 ```
 .
 ├── README.md                     ← ce fichier
-├── MAIN/                         ← système autonome (à déployer sur le Pi)
+├── CLAUDE.md                     ← règles pour l'assistant IA
+├── requirements.txt              ← dépendances Python
+│
+├── src/                          ← système autonome (à déployer sur le Pi)
 │   ├── main.py                   ← point d'entrée (orchestration du pipeline)
 │   ├── planner.py                ← génération du plan de déplacement
 │   ├── executor.py               ← exécution moteur (mouvement uniquement)
-│   ├── arm.py                    ← contrôle du bras robotique (sonde NPK)
-│   ├── sensor_npk.py             ← capteur sol RS485/Modbus (humidité, temp, EC, pH)
+│   ├── arm.py                    ← contrôle du bras robotique (sonde)
+│   ├── sensor_arduino.py         ← capteur sol via Arduino (USB série)
 │   ├── camera.py                 ← capture photo via Picamera2
+│   ├── camera_video.py           ← enregistrement vidéo H264
+│   ├── vlm_analyzer.py           ← analyse IA des photos de sol (Gemini/Groq)
 │   ├── image_processor.py        ← traitement asynchrone des images (pipeline IA)
 │   ├── data_logger.py            ← agrégation des données mission → JSON
-│   └── sample/                   ← scripts de test capteur NPK (référence)
-├── Config/
+│   └── web/                      ← dashboard Flask (réseau local)
+│       ├── app.py
+│       ├── static/style.css
+│       └── templates/
+│
+├── config/
 │   ├── map.json                  ← carte du terrain (départ + waypoints)
 │   └── calibration.json          ← constantes de calibration (cm/s, °/s, caméra)
-├── Results/                      ← photos capturées + résultats JSON
-└── Evitement/                    ← système d'évitement d'obstacles (VFH+)
-
+│
+├── tests/                        ← tests (unitaires + intégration hardware)
+│   ├── test_sensor_arduino.py    ← tests unitaires parseur capteur (14 tests)
+│   ├── test_sensor_live.py       ← test intégration hardware réel (3 tests)
+│   ├── test_sensor_audit.py      ← audit complet chaîne de mesure
+│   ├── test_camera.py            ← tests caméra + image processor (16 tests)
+│   ├── test_cam_live.py          ← test caméra hardware
+│   ├── test_vlm_analyzer.py      ← tests VLM (API réelle, 10 tests)
+│   ├── test_video_record.py      ← test enregistrement vidéo
+│   ├── test_steering.py          ← test direction interactive
+│   ├── test_steering_diag.py     ← diagnostic direction
+│   ├── test_steering_return.py   ← test compensation jeu mécanique
+│   ├── test_speed_forward.py     ← test vitesse avant
+│   ├── test_turn_rate.py         ← test taux de rotation
+│   └── test_rest_position.py     ← test retour position
+│
+├── tools/                        ← outils de diagnostic hardware
+│   └── i2c_diagnostic.py         ← scanner I2C
+│
+├── data/                         ← données générées à l'exécution
+│   ├── photos/                   ← photos capturées du sol
+│   └── results.json              ← résultats agrégés de mission
+│
+└── docs/                         ← documentation du projet
+    ├── main_doc.md               ← documentation principale du robot
+    ├── architecture.md           ← plan d'architecture logicielle
+    ├── materiel.md               ← liste du matériel
+    ├── planning_algo.md          ← algorithme de planification
+    ├── Soils4Africa.md           ← recherche données pédologiques
+    ├── obstacle_avoidance.md     ← évitement d'obstacles (VFH+)
+    ├── database_research.md      ← recherche base de données agricole
+    ├── results.md                ← résultats de tests
+    └── TODO.md                   ← feuille de route
+```
 
 ## Utilisation
 
 ```bash
-cd MAIN
+cd src
 
-# Fichiers par défaut (map.json, calibration.json)
+# Fichiers par défaut (config/map.json, config/calibration.json)
 python main.py
 
 # Afficher le plan sans bouger le robot (simulation)
@@ -55,18 +95,31 @@ python main.py --dry-run --map mission1.json --calib terrain_ouest.json
 
 # Aide complète
 python main.py --help
+
+# Dashboard web (réseau local)
+cd src && python web/app.py
+# → http://<IP_PI>:5000
 ```
+
+## Dashboard Web
+
+Accessible sur le réseau local, 3 pages :
+- **`/`** — Dashboard : stats mission, carte SVG des waypoints, tableau de mesures
+- **`/data`** — Données : photos, JSON brut, historique des waypoints
+- **`/recommandations`** — Conseils agricoles basés sur les mesures (pH, EC, humidité, température)
+
+Le dashboard détecte automatiquement l'IP locale et l'affiche au démarrage.
 
 ## Fonctionnement
 
-1. **Préparation** : on définit les points de mesure dans `Config/map.json` et on mesure les constantes dans `Config/calibration.json`
+1. **Préparation** : on définit les points de mesure dans `config/map.json` et on mesure les constantes dans `config/calibration.json`
 2. **Planification** : `planner.py` calcule les angles, distances et durées
 3. **Exécution** : `main.py` orchestre le pipeline complet :
    - Déplacement autonome vers chaque waypoint (`executor.py`)
-   - À chaque arrêt : descente du capteur NPK (`arm.py`), mesure du sol (`sensor_npk.py`), remontée
+   - À chaque arrêt : descente du capteur (`arm.py`), mesure du sol (`sensor_arduino.py`), remontée
    - Capture de N photos du sol (`camera.py`)
    - Traitement asynchrone des images (`image_processor.py`)
-   - Agrégation des résultats dans `Results/results.json` (`data_logger.py`)
+   - Agrégation des résultats dans `data/results.json` (`data_logger.py`)
 
 ## Matériel
 
@@ -76,7 +129,7 @@ python main.py --help
 
 ## Capteurs et composants
 
-Le **PiCar-Pro V2** embarque une gamme complète de périphériques. 👉 [**Documentation complète du matériel**](materiel.md)
+Le **PiCar-Pro V2** embarque une gamme complète de périphériques. 👉 [**Documentation complète du matériel**](docs/materiel.md)
 
 | Composant | Description | Broche/Canal |
 |-----------|-------------|----------|
@@ -121,7 +174,7 @@ ssh pi@<IP_ROBOT>
 
 ---
 
-## Interface web (`MAIN/web/`)
+## Interface web (`src/web/`)
 
 *À développer — actuellement non implémentée.*
 
@@ -129,7 +182,7 @@ ssh pi@<IP_ROBOT>
 
 ## Calculs mathématiques
 
-Ensemble des calculs pour déplacer le robot d'un point A vers un point B. [Voir en détail](Planning.md)
+Ensemble des calculs pour déplacer le robot d'un point A vers un point B. [Voir en détail](docs/planning_algo.md)
 
 ---
 

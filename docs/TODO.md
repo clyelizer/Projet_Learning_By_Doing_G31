@@ -1,4 +1,4 @@
-# TODO — Projet Robot 2WD + Bras + NPK + Vision
+# TODO — Projet Robot 2WD + Bras + Capteur Sol + Vision
 
 ## Documentation
 - [ ] renommer tous les .md avec des noms clairs
@@ -19,7 +19,7 @@
 
 ### Phase 1 : Modules de base
 - [ ] Réécrire `MAIN/cam.py` → `MAIN/camera.py` (corriger bugs: import guard, chemin relatif, fallback)
-- [ ] Créer `MAIN/sensor_npk.py` (basé sur `MAIN/sample/`, pas de suppositions)
+- [x] Créer `src/sensor_arduino.py` (Arduino + MAX485 bridge, port `/dev/ttyACM0`)
 - [ ] Modifier `MAIN/arm.py` (remplacer pince par fonctions `lower_probe()` / `raise_probe()`)
 
 ### Phase 2 : Pipeline

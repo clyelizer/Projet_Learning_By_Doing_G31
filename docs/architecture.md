@@ -1,4 +1,4 @@
-# Architecture — Robot 2WD + Bras + NPK + Vision
+# Architecture — Robot 2WD + Bras + Capteur Sol + Vision
 
 > Plan d'architecture pour la refonte du pipeline autonome.
 > Date: 2026-06-12
@@ -47,7 +47,7 @@ MAIN/
 ├── planner.py               Planification (étendu pour nouveaux champs waypoint)
 ├── executor.py              Mouvement UNIQUEMENT (rotate, forward, stop)
 ├── arm.py                   Bras robotique (lower_probe, raise_probe, reset_position)
-├── sensor_npk.py       NEW  Capteur sol via RS485/Modbus (basé sur sample/)
+├── sensor_arduino.py      NEW  Capteur sol via Arduino (USB série)
 ├── camera.py                Capture photo Picamera2 (réécriture de cam.py)
 ├── image_processor.py  NEW  Traitement images (pipeline vers modèle IA)
 ├── data_logger.py      NEW  Agrégation données mission → JSON
@@ -68,7 +68,7 @@ Pour chaque waypoint:
   1. executor.rotate(direction, duration)
   2. executor.forward(duration)
   3. arm.lower_probe()           → insère le capteur dans le sol
-  4. sensor_npk.read()           → {humidity_pct, temperature_c, ec_ms_cm, ph, timestamp}
+  4. sensor_arduino.read_sensor()  → {humidity_pct, temperature_c, ec_us_cm, ph, timestamp}
   5. arm.raise_probe()           → retire le capteur
   6. camera.take_photos(n)       → ['Results/wp1_001.jpg', ...]
   7. data_logger.log(wp_id, data, paths)
@@ -85,7 +85,7 @@ Après tous les waypoints:
 |--------|----------------------|
 | `executor.py` | Mouvement moteurs uniquement |
 | `arm.py` | Positionnement bras uniquement |
-| `sensor_npk.py` | Lecture capteur sol uniquement |
+| `sensor_arduino.py` | Lecture capteur sol uniquement |
 | `camera.py` | Capture photo uniquement |
 | `image_processor.py` | Traitement images uniquement |
 | `data_logger.py` | Stockage données uniquement |
@@ -96,15 +96,14 @@ Après tous les waypoints:
 
 ## 3. Spécifications des Modules
 
-### 3.1 [`sensor_npk.py`](../MAIN/sensor_npk.py) — Capteur Sol
+### 3.1 [`sensor_arduino.py`](../src/sensor_arduino.py) — Capteur Sol
 
-Basé sur le code existant dans [`MAIN/sample/diagnostic_capteur.py`](../MAIN/sample/diagnostic_capteur.py) et [`MAIN/sample/test_capteur.py`](../MAIN/sample/test_capteur.py).
+Le capteur sol (4-en-1: humidité, température, EC, pH) est connecté via un Arduino Uno + MAX485 qui fait le pont RS485/Modbus. Le Raspberry Pi lit les données via USB série.
 
-- **Protocole**: RS485/Modbus RTU
-- **Port**: `/dev/ttyS0`, 9600 baud, 8N1
-- **Trame requête**: `[0x01, 0x03, 0x00, 0x00, 0x00, 0x04, 0x44, 0x09]`
-- **Données retournées**: Humidité (%), Température (°C), EC (mS/cm), pH
-- **Fallback**: Si `serial` non disponible → retourne `None` + warning
+- **Port**: `/dev/ttyACM0`, 9600 baud
+- **Format**: texte français multi-lignes parsé par `_parse_arduino_output()`
+- **Données retournées**: `{humidity_pct, temperature_c, ec_us_cm, ph, timestamp}`
+- **Fallback**: Si `pyserial` non disponible → retourne `None` + warning
 
 ### 3.2 [`camera.py`](../MAIN/camera.py) — Capture Photo
 
@@ -198,7 +197,7 @@ Pipeline complet: plan → mouvement → acquisition → logging → processing 
 | # | Tâche | Fichier | Action |
 |---|-------|---------|--------|
 | 1 | Réécrire caméra | `MAIN/cam.py` → `MAIN/camera.py` | Corriger tous les bugs |
-| 2 | Créer capteur NPK | `MAIN/sensor_npk.py` | Basé sur `MAIN/sample/` |
+| 2 | Créer capteur sol | `src/sensor_arduino.py` | Arduino + MAX485 bridge |
 | 3 | Modifier bras | `MAIN/arm.py` | Remplacer pince par sonde |
 | 4 | Simplifier exécuteur | `MAIN/executor.py` | Retirer `import arm` |
 | 5 | Étendre planificateur | `MAIN/planner.py` | Nouveaux champs waypoint |

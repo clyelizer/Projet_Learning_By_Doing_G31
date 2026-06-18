@@ -1,9 +1,0 @@
-{
-  "cm_per_sec": 20,
-  "deg_per_sec": 36,
-  "photo_count": 3,
-  "photo_delay_s": 0.5,
-  "probe_pause_s": 1.5,
-  "sensor_port": "/dev/ttyS0",
-  "sensor_baudrate": 9600
-}

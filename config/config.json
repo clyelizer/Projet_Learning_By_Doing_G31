@@ -1,0 +1,36 @@
+{
+  "_note": "Configuration générale du robot agricole — pipeline V2",
+
+  "tts": {
+    "engine": "espeak-ng",
+    "language": "fr",
+    "offline_fallback": true,
+    "piper_model": "fr_FR-siwis-medium",
+    "espeak_speed": 150,
+    "espeak_voice": "fr"
+  },
+
+  "languages": {
+    "fr": "Français",
+    "en": "English",
+    "bm": "Bamanankan (Bambara)",
+    "ar": "العربية (Arabe)",
+    "wo": "Wolof",
+    "ff": "Fulfulde / Pulaar",
+    "ha": "Hausa"
+  },
+
+  "chat": {
+    "model": "llama-3.1-8b-instant",
+    "provider": "groq",
+    "max_history": 20,
+    "temperature": 0.3
+  },
+
+  "reco": {
+    "model": "llama-3.1-8b-instant",
+    "provider": "groq",
+    "temperature": 0.2,
+    "max_tokens": 512
+  }
+}

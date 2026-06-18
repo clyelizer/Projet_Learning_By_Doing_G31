@@ -1,4 +1,15 @@
-# CLAUDE.md — Projet Robot 2WD + Bras + NPK + Vision
+# CLAUDE.md — Projet Robot 2WD + Bras + Capteur Sol + Vision
+
+## Structure du projet
+
+```
+src/        ← code source (à déployer sur le Pi)
+config/     ← fichiers de configuration (map.json, calibration.json)
+tests/      ← scripts de test
+tools/      ← outils de diagnostic
+docs/       ← documentation du projet
+data/       ← données générées à l'exécution (photos, results.json)
+```
 
 ## Règles Générales
 
@@ -9,7 +20,7 @@
 - **Responsabilité unique** — chaque module fait une chose et une seule.
 - **PEP8** — respect strict (sauf exceptions documentées).
 - **Test manuel possible** — chaque module doit pouvoir s'exécuter en `if __name__ == '__main__'`.
-- **Pas de suppositions** — pour le capteur NPK, se baser uniquement sur le code de référence dans `MAIN/sample/`.
+- **Pas de suppositions** — le capteur sol est documenté dans `sensor_arduino.py` et ses tests.
 
 ## Hardware / PCA9685
 
@@ -23,54 +34,58 @@
 | 1       | Base rotation bras |
 | 2       | Épaule bras |
 | 3       | Coude bras |
-| 4       | Pince bras (déprécié — le capteur NPK remplace la pince) |
+| 4       | Sonde capteur sol (remplace la pince) |
 
 - **Moteurs arrière** (2WD) : pilotés par pont en H via PCA9685, canaux **CH12–CH15**.
-  → M1 gauche : IN1=CH14, IN2=CH15
-  → M2 droite : IN1=CH13, IN2=CH12
+  → M1 gauche : IN1=CH15, IN2=CH14 (⚠️ inversé pour cohérence câblage physique)
+  → M2 droite : IN1=CH12, IN2=CH13 (⚠️ inversé pour cohérence câblage physique)
   → Ne JAMAIS utiliser les channels 0-4 pour les moteurs (conflit avec direction + bras).
 
-## Capteur NPK (`MAIN/sensor_npk.py`)
+## Capteur Sol (`src/sensor_arduino.py`)
 
-- **Protocole** : RS485/Modbus RTU sur `/dev/ttyS0`, 9600 baud, 8N1
-- **Trame requête** : `[0x01, 0x03, 0x00, 0x00, 0x00, 0x04, 0x44, 0x09]`
-- **Données retournées** : Humidité (%), Température (°C), EC (mS/cm), pH
-- **Code de référence** : [`MAIN/sample/diagnostic_capteur.py`](MAIN/sample/diagnostic_capteur.py) et [`MAIN/sample/test_capteur.py`](MAIN/sample/test_capteur.py)
-- **NE PAS INVENTER** de paramètres ou de trames — utiliser exclusivement ce qui est dans les fichiers sample.
+- **Architecture** : Arduino Uno + MAX485 fait le pont RS485/Modbus, le RPi lit via USB série
+- **Port** : `/dev/ttyACM0`, 9600 baud
+- **Format** : texte français multi-lignes (Humidité %, Température °C, EC µS/cm, pH)
+- **Données retournées** : `{humidity_pct, temperature_c, ec_us_cm, ph, timestamp}`
+- **Tests** : `tests/test_sensor_arduino.py` (parseur) + `tests/test_sensor_live.py` (intégration hardware)
 
-## Bras Robotique (`MAIN/arm.py`)
+## Bras Robotique (`src/arm.py`)
 
-- La pince est remplacée physiquement par le capteur NPK.
+- La pince est remplacée physiquement par le capteur sol.
 - Nouvelles fonctions : `lower_probe()` (descendre le capteur dans le sol) et `raise_probe()` (le remonter).
 - `perform_sample()` est supprimé — le module ne fait plus de prélèvement avec pince.
 - Séquences critiques avec `time.sleep()` adéquat entre chaque étape.
 
-## Caméra (`MAIN/camera.py`)
+## Caméra (`src/camera.py`)
 
-- Remplace l'ancien `MAIN/cam.py` (buggé : exécution à l'import, chemin hardcodé).
-- Utilise Picamera2. Photos sauvegardées dans `Results/`.
+- Remplace l'ancien `cam.py` (buggé : exécution à l'import, chemin hardcodé).
+- Utilise Picamera2. Photos sauvegardées dans `data/photos/`.
 - Fallback si picamera2 indisponible (mode simulation).
 - Garde `if __name__ == '__main__'` obligatoire.
 
-## Exécuteur (`MAIN/executor.py`)
+## Exécuteur (`src/executor.py`)
 
 - **Mouvement uniquement** : rotate, forward, stop.
-- **Ne pas importer** `arm`, `sensor_npk`, ou `camera` dans executor.
+- **Ne pas importer** `arm`, `sensor_arduino`, ou `camera` dans executor.
 - Les moteurs arrière sont sur PCA9685 **CH12–CH15** (pont en H intégré).
 - Le channel 0 du PCA9685 est **exclusivement** pour le servo de direction.
+- **Rotation = virage en courbe (arc turn), PAS rotation sur place.** Le robot est un 2WD à direction servo avant, pas un tank. `rotate_left()`/`rotate_right()` utilisent le servo de direction + les deux moteurs en marche avant. Ne JAMAIS utiliser des directions opposées sur les moteurs arrière (casse la physique du châssis).
 
 ## Modules et Responsabilités
 
 | Module | Responsabilité unique |
 |--------|----------------------|
-| `executor.py` | Mouvement moteurs uniquement |
-| `arm.py` | Positionnement bras uniquement |
-| `sensor_npk.py` | Lecture capteur sol uniquement |
-| `camera.py` | Capture photo uniquement |
-| `image_processor.py` | Traitement images (pipeline asynchrone) |
-| `data_logger.py` | Agrégation données mission → JSON |
-| `planner.py` | Génération plan de déplacement |
-| `main.py` | Orchestration du pipeline complet |
+| `src/executor.py` | Mouvement moteurs uniquement |
+| `src/arm.py` | Positionnement bras uniquement |
+| `src/sensor_arduino.py` | Lecture capteur sol uniquement |
+| `src/camera.py` | Capture photo uniquement |
+| `src/camera_video.py` | Enregistrement vidéo H264 (module séparé) |
+| `src/image_processor.py` | Traitement images (pipeline asynchrone) |
+| `src/vlm_analyzer.py` | Analyse IA sol (Gemini → Groq fallback) |
+| `src/data_logger.py` | Agrégation données mission → JSON |
+| `src/planner.py` | Génération plan de déplacement |
+| `src/main.py` | Orchestration du pipeline complet |
+| `src/web/app.py` | Dashboard Flask (réseau local) |
 
 ## Style de Code
 

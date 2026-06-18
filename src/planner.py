@@ -161,7 +161,7 @@ def print_plan(plan):
 if __name__ == '__main__':
     import os as _os
     _here = _os.path.dirname(_os.path.abspath(__file__))
-    _cfg = _os.path.join(_here, '..', 'Config')
+    _cfg = _os.path.join(_here, '..', 'config')
     plan = generate_plan(
         _os.path.join(_cfg, 'map.json'),
         _os.path.join(_cfg, 'calibration.json')

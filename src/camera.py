@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Module de capture photo via Picamera2.
-Prend N photos du sol et les sauvegarde dans Results/.
+Prend N photos du sol et les sauvegarde dans data/photos/.
 
 Usage:
     python camera.py          # test: prend 1 photo
@@ -20,7 +20,7 @@ except ImportError:
 
 # Chemin de sortie relatif au projet
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-RESULTS_DIR = os.path.join(SCRIPT_DIR, '..', 'Results')
+OUTPUT_DIR = os.path.join(SCRIPT_DIR, '..', 'data', 'photos')
 
 # Instance singleton du module — la caméra reste allumée entre les appels
 _camera = None
@@ -53,7 +53,7 @@ def take_photos(n=3, delay=0.5, output_dir=None):
     Args:
         n: nombre de photos à prendre (défaut: 3)
         delay: délai entre chaque photo en secondes (défaut: 0.5)
-        output_dir: dossier de sortie (défaut: ../Results/)
+        output_dir: dossier de sortie (défaut: ../data/photos/)
 
     Returns:
         list[str]: chemins des fichiers sauvegardés, ou liste vide si caméra indisponible
@@ -64,7 +64,7 @@ def take_photos(n=3, delay=0.5, output_dir=None):
         return []
 
     if output_dir is None:
-        output_dir = RESULTS_DIR
+        output_dir = OUTPUT_DIR
 
     os.makedirs(output_dir, exist_ok=True)
 

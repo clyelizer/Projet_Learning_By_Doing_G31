@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 """
 Module de contrôle du bras robotique.
-Servos : 1=base, 2=épaule, 3=coude, 4=pince (déprécié — remplacé par capteur NPK)
+Servos : 1=base, 2=épaule, 3=coude, 4=sonde (remplace la pince)
 Le channel 0 est réservé au servo de direction des roues avant.
 
-Le capteur NPK remplace physiquement la pince. Les fonctions de prélèvement
+Le capteur sol remplace physiquement la pince. Les fonctions de prélèvement
 (lower_probe / raise_probe) descendent le capteur dans le sol et le remontent.
 """
 
@@ -25,7 +25,7 @@ ARM_SERVOS = {
     'base':     1,   # Base rotation du bras
     'shoulder': 2,   # Épaule haut/bas
     'elbow':    3,   # Coude
-    'gripper':  4,   # Pince (déprécié — le capteur NPK est monté ici)
+    'gripper':  4,   # Sonde capteur sol
 }
 
 # Valeurs PWM (0-180° ≈ 100-560) — À AJUSTER selon votre montage
@@ -66,20 +66,20 @@ class ArmController:
     
     def lower_probe(self):
         """
-        Descend le capteur NPK dans le sol.
+        Descend le capteur dans le sol.
         Abaisse l'épaule et le coude pour insérer le capteur.
         """
-        print("[ARM] Descente sonde NPK dans le sol")
+        print("[ARM] Descente sonde dans le sol")
         self.set_servo('shoulder', PWM_POSITIONS['shoulder']['down'])
         self.set_servo('elbow', PWM_POSITIONS['elbow']['down'])
         time.sleep(1.0)
     
     def raise_probe(self):
         """
-        Remonte le capteur NPK hors du sol.
+        Remonte le capteur hors du sol.
         Relève l'épaule et le coude pour extraire le capteur.
         """
-        print("[ARM] Remontée sonde NPK")
+        print("[ARM] Remontée sonde")
         self.set_servo('shoulder', PWM_POSITIONS['shoulder']['up'])
         self.set_servo('elbow', PWM_POSITIONS['elbow']['up'])
         time.sleep(1.0)
@@ -102,7 +102,7 @@ def cleanup():
 
 
 if __name__ == '__main__':
-    print("Test bras robotique — sonde NPK")
+    print("Test bras robotique — sonde")
     arm = get_arm()
     arm.lower_probe()
     time.sleep(1.5)

@@ -3,7 +3,7 @@
 """
 Point d'entrée principal du système autonome.
 Orchestre le pipeline complet :
-  planner → executor → arm → sensor_npk → camera → image_processor → data_logger
+  planner → executor → arm → sensor_arduino → camera → image_preprocessor → data_logger
 
 Usage:
     python main.py                                          # Fichiers par défaut
@@ -23,9 +23,12 @@ import time
 import planner
 import executor
 import arm
-import sensor_npk
+import sensor_arduino
 import camera
-import image_processor
+import image_preprocessor
+import vlm_analyzer
+import reco_engine
+import tts_engine
 import data_logger
 
 
@@ -34,6 +37,8 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def signal_handler(sig, frame):
     """Gestion propre de l'interruption (Ctrl+C)."""
+    # Ignorer les Ctrl+C suivants pendant le nettoyage (évite la ré-entrance)
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
     print("\n[INFO] Arrêt demandé - nettoyage...")
 
     # Sécurité : remonter le bras si la sonde était baissée
@@ -50,8 +55,8 @@ def signal_handler(sig, frame):
 
     # Sauvegarde des données de mission déjà collectées
     try:
-        image_processor.wait_all()
-        img_results = image_processor.get_results()
+        image_preprocessor.wait_all()
+        img_results = image_preprocessor.get_results()
         if img_results:
             data_logger.get_logger().attach_image_results(img_results)
         data_logger.save_final()
@@ -77,15 +82,15 @@ Exemples:
     parser.add_argument(
         '--map',
         type=str,
-        default=os.path.join(SCRIPT_DIR, '..', 'Config', 'map.json'),
-        help="Chemin vers le fichier de carte (défaut: Config/map.json)"
+        default=os.path.join(SCRIPT_DIR, '..', 'config', 'map.json'),
+        help="Chemin vers le fichier de carte (défaut: config/map.json)"
     )
     
     parser.add_argument(
         '--calib',
         type=str,
-        default=os.path.join(SCRIPT_DIR, '..', 'Config', 'calibration.json'),
-        help="Chemin vers le fichier de calibration (défaut: Config/calibration.json)"
+        default=os.path.join(SCRIPT_DIR, '..', 'config', 'calibration.json'),
+        help="Chemin vers le fichier de calibration (défaut: config/calibration.json)"
     )
     
     parser.add_argument(
@@ -110,11 +115,14 @@ def main():
         print(f"[WARN] Impossible de charger la calibration: {e} — valeurs par défaut utilisées")
         calib = {}
 
-    photo_count = calib.get('photo_count', 3)
+    motor_speed = calib.get('motor_speed', 0.5)
     photo_delay_s = calib.get('photo_delay_s', 0.5)
     probe_pause_s = calib.get('probe_pause_s', 1.5)
-    sensor_port = calib.get('sensor_port', '/dev/ttyS0')
+    sensor_port = calib.get('sensor_port', '/dev/ttyACM0')
     sensor_baudrate = calib.get('sensor_baudrate', 9600)
+
+    # Appliquer la vitesse moteur avant toute commande
+    executor.get_controller().set_motor_speed(motor_speed)
 
     # Gestion du Ctrl+C
     signal.signal(signal.SIGINT, signal_handler)
@@ -176,16 +184,16 @@ def main():
                     arm_ctrl.lower_probe()
                     probe_lowered = True
                     time.sleep(probe_pause_s)
-                    sensor_data = sensor_npk.read_sensor(
+                    sensor_data = sensor_arduino.read_sensor(
                         port=sensor_port, baudrate=sensor_baudrate
                     )
                     if sensor_data is None:
-                        print("[WARN] Lecture capteur NPK: aucune donnée retournée")
+                        print("[WARN] Lecture capteur sol: aucune donnée retournée")
                     arm_ctrl.raise_probe()
                     probe_lowered = False
                     arm_ctrl.reset_position()
                 except Exception as e:
-                    print(f"[ERROR] Échec sondage NPK: {e}")
+                    print(f"[ERROR] Échec sondage capteur: {e}")
                     sensor_data = None
                     # Récupération sécurisée : ne relever que si la sonde a été baissée
                     try:
@@ -199,11 +207,11 @@ def main():
 
             elif action == 'photo':
                 try:
-                    count = command.get('count', photo_count)
+                    count = command.get('count', 3)  # planner surcharge, fallback=3
                     photo_paths = camera.take_photos(n=count, delay=photo_delay_s)
                     data_logger.log_waypoint(wp_id, image_paths=photo_paths)
                     if photo_paths:
-                        image_processor.enqueue(photo_paths, wp_id)
+                        image_preprocessor.enqueue(photo_paths, wp_id)
                 except Exception as e:
                     print(f"[ERROR] Échec capture photo: {e}")
                     data_logger.log_waypoint(wp_id, image_paths=[])
@@ -214,12 +222,69 @@ def main():
 
     # Attendre la fin des traitements asynchrones
     print("\n[MAIN] Finalisation des traitements...")
-    image_processor.wait_all()
+    image_preprocessor.wait_all()
 
-    # Attacher les résultats d'image au logger
-    img_results = image_processor.get_results()
+    # Récupérer les résultats image
+    img_results = image_preprocessor.get_results()
     if img_results:
         data_logger.get_logger().attach_image_results(img_results)
+
+    # ── Pipeline V2 : VLM + Reco + TTS ─────────────────────────
+
+    print("\n[MAIN] Pipeline V2 — Analyse IA...")
+
+    for wp in data_logger.get_logger().get_summary()['waypoints']:
+        wp_id = wp['waypoint_id']
+        sensor = wp.get('sensor')
+        photos = wp.get('photos', [])
+
+        if not sensor and not photos:
+            continue
+
+        # Étape 1 : VLM sur la première photo du waypoint
+        vlm_result = None
+        if photos:
+            photo = photos[0]
+            print(f"  🧠 VLM wp{wp_id} → {os.path.basename(photo)}")
+            try:
+                vlm_result = vlm_analyzer.analyze_soil_ia(photo, primary='gemini')
+                if vlm_result.get('provider'):
+                    data_logger.get_logger().attach_vlm(wp_id, vlm_result)
+                    print(f"     ✅ {vlm_result['provider']}: "
+                          f"sol={vlm_result.get('soil_type', '?')}")
+                else:
+                    print(f"     ⚠️  VLM échec: {vlm_result.get('error', 'inconnu')}")
+            except Exception as e:
+                print(f"     ❌ VLM erreur: {e}")
+
+        # Étape 2 : Recommandations via LLM
+        if sensor:
+            print(f"  📋 Reco wp{wp_id} → Groq Llama 8B")
+            try:
+                reco_result = reco_engine.recommend(sensor, vlm_result, language='fr')
+                if 'error' not in reco_result:
+                    data_logger.get_logger().attach_reco(wp_id, reco_result)
+                    crops = reco_result.get('crops', [])
+                    print(f"     ✅ Cultures: {', '.join(crops[:3])}")
+                else:
+                    print(f"     ⚠️  Reco échec: {reco_result['error']}")
+            except Exception as e:
+                print(f"     ❌ Reco erreur: {e}")
+
+        # Étape 3 : TTS (synthèse vocale de la reco)
+        if sensor:
+            try:
+                reco_data = wp.get('recommendations', {})
+                summary = reco_data.get('summary', '')
+                if summary:
+                    print(f"  🔊 TTS wp{wp_id}...")
+                    audio = tts_engine.speak(summary, engine='auto', lang='fr')
+                    if 'error' not in audio:
+                        data_logger.get_logger().attach_audio(wp_id, audio)
+                        tts_engine.play_audio(audio['path'])
+                        print(f"     ✅ Audio joué ({audio['engine']})")
+            except Exception as e:
+                print(f"     ⚠️  TTS erreur: {e}")
 
     # Sauvegarde finale
     data_logger.save_final()
@@ -228,10 +293,47 @@ def main():
     print("  MISSION TERMINÉE")
     print("=" * 50)
 
-    # Nettoyage
+    # Nettoyage matériel
     executor.cleanup()
     arm.cleanup()
     camera.cleanup()
+
+    # ── Lancement auto du dashboard ────────────────────────────
+    _launch_dashboard()
+
+
+def _is_flask_running():
+    """Vérifie si le dashboard Flask tourne déjà."""
+    import subprocess
+    try:
+        result = subprocess.run(
+            ['pgrep', '-f', 'web/app.py'],
+            capture_output=True, text=True
+        )
+        return result.returncode == 0
+    except Exception:
+        return False
+
+
+def _launch_dashboard():
+    """Lance le dashboard web s'il n'est pas déjà actif."""
+    if _is_flask_running():
+        print("[MAIN] Dashboard déjà en ligne")
+        return
+
+    print("[MAIN] Lancement du dashboard...")
+    try:
+        web_dir = os.path.join(SCRIPT_DIR, 'web')
+        subprocess.Popen(
+            [sys.executable, 'app.py'],
+            cwd=web_dir,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        time.sleep(2)
+        print("[MAIN] Dashboard lancé sur http://0.0.0.0:5000")
+    except Exception as e:
+        print(f"[MAIN] Échec lancement dashboard: {e}")
 
 
 if __name__ == '__main__':

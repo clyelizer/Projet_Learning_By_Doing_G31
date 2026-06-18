@@ -1,0 +1,11 @@
+# --- Matériel (Raspberry Pi) ---
+# Adafruit_PCA9685  # Contrôleur PWM pour servos et moteurs
+# picamera2         # Capture photo via caméra Pi
+# pyserial          # Communication RS485/Modbus pour capteur NPK
+
+# --- Standard Library (pas d'installation nécessaire) ---
+# json, os, sys, time, signal, argparse, math, threading, queue
+
+# Installation:
+#   pip install Adafruit_PCA9685 pyserial
+#   sudo apt install python3-picamera2  # (sur Pi avec OS Bookworm+)

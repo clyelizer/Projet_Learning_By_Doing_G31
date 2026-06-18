@@ -67,7 +67,7 @@ class DataLogger:
         Associe les résultats du processeur d'images aux waypoints.
 
         Args:
-            image_results: list[dict] — résultats de image_processor.get_results()
+            image_results: list[dict] — résultats de image_preprocessor.get_results()
         """
         for result in image_results:
             wp_id = result['waypoint_id']
@@ -77,6 +77,45 @@ class DataLogger:
                         entry['image_results'] = []
                     entry['image_results'].append(result)
                     break
+
+    def attach_vlm(self, waypoint_id, vlm_result):
+        """
+        Attache l'analyse VLM (Gemini/Groq) à un waypoint.
+
+        Args:
+            waypoint_id: int
+            vlm_result: dict — résultat de vlm_analyzer.analyze_soil_ia()
+        """
+        for entry in self._waypoints:
+            if entry['waypoint_id'] == waypoint_id:
+                entry['vlm_analysis'] = vlm_result
+                return
+
+    def attach_reco(self, waypoint_id, reco_result):
+        """
+        Attache les recommandations à un waypoint.
+
+        Args:
+            waypoint_id: int
+            reco_result: dict — résultat de reco_engine.recommend()
+        """
+        for entry in self._waypoints:
+            if entry['waypoint_id'] == waypoint_id:
+                entry['recommendations'] = reco_result
+                return
+
+    def attach_audio(self, waypoint_id, audio_result):
+        """
+        Attache le chemin audio TTS à un waypoint.
+
+        Args:
+            waypoint_id: int
+            audio_result: dict — résultat de tts_engine.speak()
+        """
+        for entry in self._waypoints:
+            if entry['waypoint_id'] == waypoint_id:
+                entry['tts_audio'] = audio_result
+                return
 
     def get_summary(self):
         """Retourne le résumé complet de la mission."""
@@ -96,11 +135,11 @@ class DataLogger:
 
         Args:
             output_path: chemin du fichier de sortie
-                         (défaut: ../Results/results.json)
+                         (défaut: ../data/results.json)
         """
         if output_path is None:
             script_dir = os.path.dirname(os.path.abspath(__file__))
-            output_path = os.path.join(script_dir, '..', 'Results',
+            output_path = os.path.join(script_dir, '..', 'data',
                                        'results.json')
 
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -145,7 +184,7 @@ if __name__ == '__main__':
         1,
         sensor_data={'humidity_pct': 45.2, 'temperature_c': 22.1,
                      'ec_ms_cm': 1.2, 'ph': 6.8},
-        image_paths=['Results/wp1_001.jpg', 'Results/wp1_002.jpg']
+        image_paths=['data/photos/wp1_001.jpg', 'data/photos/wp1_002.jpg']
     )
 
     # Simulation waypoint 2
@@ -153,7 +192,7 @@ if __name__ == '__main__':
         2,
         sensor_data={'humidity_pct': 38.7, 'temperature_c': 23.4,
                      'ec_ms_cm': 0.9, 'ph': 7.1},
-        image_paths=['Results/wp2_001.jpg']
+        image_paths=['data/photos/wp2_001.jpg']
     )
 
     # Sauvegarde
