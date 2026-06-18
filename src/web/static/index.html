@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌱 Robot Agricole — Dashboard</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">🌱 Robot Agricole</a>
+            <button class="nav-toggle" id="nav-toggle" aria-label="Menu">☰</button>
+            <div class="nav-links" id="nav-links">
+                <a href="#" class="nav-link active" data-page="dashboard">Dashboard</a>
+                <a href="#" class="nav-link" data-page="data">Données</a>
+                <a href="#" class="nav-link" data-page="reco">Recommandations</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container" id="main-content">
+        <!-- Rempli par app.js -->
+    </main>
+
+    <!-- Chat Bubble -->
+    <div id="chat-bubble" class="chat-bubble">
+        <button id="chat-toggle" class="chat-toggle">💬</button>
+        <div id="chat-window" class="chat-window hidden">
+            <div class="chat-header">
+                <span>🌱 Assistant Agricole</span>
+                <button id="chat-close" class="chat-close">✕</button>
+            </div>
+            <div id="chat-messages" class="chat-messages"></div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Posez votre question..." autocomplete="off">
+                <button id="chat-send">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>Robot Agricole Autonome — Projet Learning By Doing G31</p>
+    </footer>
+
+    <script src="/app.js"></script>
+    <script src="/chat.js"></script>
+</body>
+</html>

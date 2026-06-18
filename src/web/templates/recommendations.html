@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% block title %}Recommandations — Robot Agricole{% endblock %}
+{% block content %}
+
+<h1>🌾 Recommandations agricoles</h1>
+<p class="subtitle">Conseils personnalisés basés sur les mesures du sol.</p>
+
+{% if wp_recommendations %}
+    {% for wp in wp_recommendations %}
+    <div class="rec-section">
+        <h2>📍 Waypoint #{{ wp.waypoint_id }}</h2>
+
+        <div class="rec-summary">
+            <span>💧 {{ "%.1f"|format(wp.sensor.humidity_pct) }}%</span>
+            <span>🌡️ {{ "%.1f"|format(wp.sensor.temperature_c) }}°C</span>
+            <span>⚡ {{ "%.0f"|format(wp.sensor.ec_us_cm) }} µS/cm</span>
+            <span>🧪 pH {{ "%.1f"|format(wp.sensor.ph) }}</span>
+        </div>
+
+        <div class="rec-cards">
+            {% for rec in wp.recommendations %}
+            <div class="rec-card rec-{{ rec.level }}">
+                <div class="rec-icon">{{ rec.icon }}</div>
+                <div class="rec-body">
+                    <h4>{{ rec.title }}</h4>
+                    <p>{{ rec.advice }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if wp.image_analysis %}
+        {% set ia = wp.image_analysis %}
+        {% set is_vlm = ia._source and ia._source.startswith('vlm') %}
+        <div class="visual-analysis">
+            <h3>📷 Analyse visuelle du sol
+                {% if is_vlm %}
+                <span class="source-badge">IA ({{ ia.provider }})</span>
+                {% else %}
+                <span class="source-badge">OpenCV</span>
+                {% endif %}
+            </h3>
+
+            {% if is_vlm %}
+            {# --- Résultat VLM (Gemini / Groq) --- #}
+            <div class="va-grid">
+                <div class="va-item">
+                    <span class="va-icon">🌱</span>
+                    <span class="va-label">Type de sol</span>
+                    <span class="va-value">{{ ia.soil_type or '—' }}</span>
+                </div>
+                <div class="va-item">
+                    <span class="va-icon">🎨</span>
+                    <span class="va-label">Couleur</span>
+                    <span class="va-value">{{ ia.color or '—' }}</span>
+                </div>
+                <div class="va-item">
+                    <span class="va-icon">🔬</span>
+                    <span class="va-label">Texture</span>
+                    <span class="va-value">{{ ia.texture or '—' }}</span>
+                </div>
+                <div class="va-item">
+                    <span class="va-icon">💧</span>
+                    <span class="va-label">Humidité</span>
+                    <span class="va-value">{{ ia.moisture_estimate or '—' }}</span>
+                </div>
+                <div class="va-item">
+                    <span class="va-icon">🌿</span>
+                    <span class="va-label">Végétation</span>
+                    <span class="va-value">{{ ia.vegetation_cover or '—' }}%</span>
+                </div>
+                <div class="va-item">
+                    <span class="va-icon">🍃</span>
+                    <span class="va-label">Santé cultures</span>
+                    <span class="va-value">{{ ia.crop_health or '—' }}</span>
+                </div>
+            </div>
+            {% if ia.anomalies and ia.anomalies != 'null' and ia.anomalies != 'None' %}
+            <div class="alert alert-warning" style="margin-top:12px">
+                ⚠️ <strong>Anomalies :</strong> {{ ia.anomalies }}
+            </div>
+            {% endif %}
+            {% if ia.recommendations %}
+            <div class="va-notes">
+                <p><strong>💡 Recommandations VLM :</strong></p>
+                {% for r in ia.recommendations %}
+                <p>• {{ r }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% else %}
+            {# --- Résultat OpenCV --- #}
+            <div class="va-grid">
+                <div class="va-item">
+                    <span class="va-icon">{{ ia.soil_type.icon }}</span>
+                    <span class="va-label">Type de sol</span>
+                    <span class="va-value">{{ ia.soil_type.label }}</span>
+                </div>
+                <div class="va-item">
+                    <span class="va-icon">🌿</span>
+                    <span class="va-label">Végétation</span>
+                    <span class="va-value">{{ ia.vegetation.label }}</span>
+                </div>
+                <div class="va-item">
+                    <span class="va-icon">🏮</span>
+                    <span class="va-label">Luminosité</span>
+                    <span class="va-value">{{ ia.soil_brightness }}/255</span>
+                </div>
+                <div class="va-item">
+                    <span class="va-icon">🔬</span>
+                    <span class="va-label">Texture</span>
+                    <span class="va-value">{{ "%.0f"|format(ia.texture_score) }}</span>
+                </div>
+            </div>
+            <div class="va-notes">
+                {% for note in ia.quality_notes %}
+                <p>{{ note }}</p>
+                {% endfor %}
+            </div>
+            {% if ia.vegetation.level == 'low' %}
+            <div class="alert alert-warning" style="margin-top:12px">
+                ⚠️ <strong>Sol nu :</strong> {{ ia.vegetation.advice }}
+            </div>
+            {% endif %}
+            {% endif %}
+
+            {% if wp.first_photo %}
+            <div class="va-photo">
+                <img src="{{ url_for('serve_photo', filename=wp.first_photo.split('/')[-1]) }}"
+                     alt="Photo WP{{ wp.waypoint_id }}" loading="lazy">
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    <!-- Résumé global -->
+    <div class="section">
+        <h2>📋 Résumé pour l'agriculteur</h2>
+        <div class="summary-cards">
+            {% set all_recs = [] %}
+            {% for wp in wp_recommendations %}
+                {% for rec in wp.recommendations %}
+                    {% set _ = all_recs.append(rec) %}
+                {% endfor %}
+            {% endfor %}
+
+            {% set dangers = all_recs|selectattr('level', 'equalto', 'danger')|list %}
+            {% set warnings = all_recs|selectattr('level', 'equalto', 'warning')|list %}
+            {% set goods = all_recs|selectattr('level', 'equalto', 'good')|list %}
+
+            <div class="summary-card summary-danger">
+                <span class="summary-count">{{ dangers|length }}</span>
+                <span class="summary-label">Urgent</span>
+            </div>
+            <div class="summary-card summary-warning">
+                <span class="summary-count">{{ warnings|length }}</span>
+                <span class="summary-label">À surveiller</span>
+            </div>
+            <div class="summary-card summary-good">
+                <span class="summary-count">{{ goods|length }}</span>
+                <span class="summary-label">OK</span>
+            </div>
+        </div>
+
+        {% if dangers %}
+        <div class="alert alert-danger">
+            <strong>⚠️ Actions prioritaires :</strong>
+            <ul>
+                {% for wp in wp_recommendations %}
+                    {% for rec in wp.recommendations %}
+                        {% if rec.level == 'danger' %}
+                        <li><strong>WP{{ wp.waypoint_id }} :</strong> {{ rec.advice }}</li>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if warnings %}
+        <div class="alert alert-warning">
+            <strong>🔍 Points à surveiller :</strong>
+            <ul>
+                {% for wp in wp_recommendations %}
+                    {% for rec in wp.recommendations %}
+                        {% if rec.level == 'warning' %}
+                        <li><strong>WP{{ wp.waypoint_id }} :</strong> {{ rec.advice }}</li>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+{% else %}
+<div class="empty-state">
+    <p>Aucune mesure disponible pour générer des recommandations.</p>
+    <p>Lancez une mission avec le capteur pour obtenir des conseils personnalisés.</p>
+</div>
+{% endif %}
+
+{% endblock %}
