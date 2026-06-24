@@ -3,12 +3,11 @@
 """
 Moteur de synthèse vocale (TTS) multi-moteur.
 
-3 moteurs :
-  espeak-ng  — offline, rapide, qualité basique (install: sudo apt install espeak-ng)
-  piper      — offline, neuronal, qualité supérieure (install: pip install piper-tts)
-  elvenlabs  — online, qualité premium (install: pip install elevenlabs + clé API)
+2 moteurs :
+  gtts       — online, qualité Google (pip install gtts)
+  espeak-ng  — offline, rapide, qualité basique (sudo apt install espeak-ng)
 
-Priorité : moteur configuré → fallback offline si échec.
+Priorité : gTTS (online) → espeak-ng (offline fallback).
 
 Usage:
     python tts_engine.py "Bonjour le monde"
@@ -28,7 +27,7 @@ AUDIO_DIR = os.path.join(os.path.dirname(__file__), '..', 'data', 'audio')
 os.makedirs(AUDIO_DIR, exist_ok=True)
 
 # Langues autorisées (allowlist pour validation)
-ALLOWED_LANGUAGES = {'fr', 'en', 'bm', 'ar', 'wo', 'ff', 'ha'}
+ALLOWED_LANGUAGES = {'fr', 'en', 'ha', 'sw', 'af', 'am', 'ar', 'bm', 'wo', 'ff', 'yo', 'ig', 'zu', 'xh', 'rw', 'mg', 'sn', 'so', 'st', 'tn', 'ny'}
 
 # Vérification disponibilité des moteurs
 try:
@@ -44,11 +43,10 @@ except ImportError:
     PIPER_AVAILABLE = False
 
 try:
-    from elevenlabs import play, save
-    from elevenlabs.client import ElevenLabs
-    ELVENLABS_AVAILABLE = True
+    from gtts import gTTS
+    GTTS_AVAILABLE = True
 except ImportError:
-    ELVENLABS_AVAILABLE = False
+    GTTS_AVAILABLE = False
 
 
 # ── Configuration ─────────────────────────────────────────────────
@@ -66,26 +64,42 @@ def get_available_engines():
         engines.append('espeak-ng')
     if PIPER_AVAILABLE:
         engines.append('piper')
-    if ELVENLABS_AVAILABLE and os.environ.get('ELEVENLABS_API_KEY'):
-        engines.append('elvenlabs')
+    if GTTS_AVAILABLE:
+        engines.append('gtts')
     return engines
 
 
 def get_available_languages(engine):
     """Langues supportées par moteur."""
     all_langs = {
-        'fr': 'Français', 'en': 'English', 'bm': 'Bamanankan',
-        'ar': 'العربية', 'wo': 'Wolof', 'ff': 'Fulfulde', 'ha': 'Hausa',
+        'fr': 'Français',
+        'en': 'English',
+        'ha': 'Hausa (هَوُسَ)',
+        'sw': 'Swahili (Kiswahili)',
+        'af': 'Afrikaans',
+        'am': 'Amharic (አማርኛ)',
+        'ar': 'العربية',
+        'bm': 'Bamanankan (ߒߞߏ)',
+        'wo': 'Wolof',
+        'ff': 'Fulfulde (𞤊𞤵𞤤𞤬𞤵𞤤𞤣𞤫)',
+        'yo': 'Yoruba (Èdè Yorùbá)',
+        'ig': 'Igbo (Asụsụ Igbo)',
+        'zu': 'Zulu (isiZulu)',
+        'xh': 'Xhosa (isiXhosa)',
+        'rw': 'Kinyarwanda',
+        'mg': 'Malagasy',
+        'sn': 'Shona (chiShona)',
+        'so': 'Somali (Soomaali)',
+        'st': 'Sesotho',
+        'tn': 'Tswana (Setswana)',
+        'ny': 'Chichewa (Nyanja)',
     }
-    if engine == 'elvenlabs':
-        # Elvenlabs supporte ~30 langues
-        return all_langs
+    if engine == 'gtts':
+        # gTTS support réel: les langues qu'on a testées
+        return {k: v for k, v in all_langs.items() if k in ('fr','en','ha','sw','af','am','ar')}
     elif engine == 'espeak-ng':
-        # espeak-ng supporte ~100 langues
-        return all_langs
-    elif engine == 'piper':
-        # Piper: dépend des modèles installés. Fallback fr/en.
-        return {k: v for k, v in all_langs.items() if k in ('fr', 'en')}
+        # espeak-ng offline — support variable (yo, ig, zu, xh, st, tn, sn, rw, so en plus de gTTS)
+        return {k: v for k, v in all_langs.items() if k in ('fr','en','ha','sw','af','am','ar','yo','ig','zu','xh','st','tn','sn','rw','so','bm','wo','ff')}
     return {}
 
 
@@ -94,14 +108,13 @@ def get_available_languages(engine):
 def _speak_espeak(text, lang='fr', speed=150):
     """
     Synthèse via espeak-ng.
-    Sauvegarde dans data/audio/ avec nettoyage des anciens fichiers.
+    Sauvegarde dans data/audio/ avec écrasement (pas de fuite disque).
     """
     config = _load_config()
     tts_cfg = config.get('tts', {})
     speed = tts_cfg.get('espeak_speed', speed)
     voice = tts_cfg.get('espeak_voice', lang)
 
-    # Nom prédictible → écrasé à chaque appel (pas de fuite disque)
     out_path = os.path.join(AUDIO_DIR, f'espeak_{lang}.wav')
 
     cmd = [
@@ -130,19 +143,11 @@ def _speak_piper(text, lang='fr'):
     return out_path
 
 
-def _speak_elvenlabs(text, lang='fr'):
-    """
-    Synthèse via ElevenLabs API.
-    Qualité premium, nécessite clé API.
-    """
-    api_key = os.environ.get('ELEVENLABS_API_KEY')
-    if not api_key:
-        raise ValueError("ELEVENLABS_API_KEY non configurée")
-
-    client = ElevenLabs(api_key=api_key)
-    audio = client.generate(text=text, voice="Rachel")
-    out_path = os.path.join(AUDIO_DIR, f'elvenlabs_{lang}.mp3')
-    save(audio, out_path)
+def _speak_gtts(text, lang='fr'):
+    """Synthèse via Google TTS (online, nécessite internet)."""
+    tts = gTTS(text=text, lang=lang, slow=False)
+    out_path = os.path.join(AUDIO_DIR, f'gtts_{lang}.mp3')
+    tts.save(out_path)
     return out_path
 
 
@@ -154,8 +159,8 @@ def speak(text, engine='auto', lang='fr'):
 
     Args:
         text: str — texte à prononcer
-        engine: 'auto' (détection auto), 'espeak-ng', 'piper', 'elvenlabs'
-        lang: code langue ('fr', 'en', 'bm', 'ar', 'wo', 'ff', 'ha')
+        engine: 'auto' (détection auto), 'gtts', 'espeak-ng'
+        lang: code langue ('fr', 'en', 'ha', 'sw', 'af', 'am', 'ar', ...)
 
     Returns:
         dict: {'path': chemin_fichier, 'engine': moteur_utilisé, 'lang': langue}
@@ -171,27 +176,29 @@ def speak(text, engine='auto', lang='fr'):
                          f'Langues disponibles: {sorted(ALLOWED_LANGUAGES)}'}
 
     if engine == 'auto':
-        engine = tts_cfg.get('engine', 'espeak-ng')
+        engine = tts_cfg.get('engine', 'gtts')
 
-    # Ordre de priorité : moteur demandé → fallback offline
+    # Ordre de priorité : moteur demandé → fallbacks
     priority = [engine]
-    if offline_fallback and engine != 'espeak-ng':
+    if GTTS_AVAILABLE and engine != 'gtts':
+        priority.append('gtts')
+    if ESPEAK_AVAILABLE and engine != 'espeak-ng':
         priority.append('espeak-ng')
-    if offline_fallback and engine != 'piper':
+    if PIPER_AVAILABLE and engine != 'piper':
         priority.append('piper')
 
     errors = []
     for eng in priority:
         try:
-            if eng == 'espeak-ng' and ESPEAK_AVAILABLE:
+            if eng == 'gtts' and GTTS_AVAILABLE:
+                path = _speak_gtts(text, lang=lang)
+                return {'path': path, 'engine': 'gtts', 'lang': lang}
+            elif eng == 'espeak-ng' and ESPEAK_AVAILABLE:
                 path = _speak_espeak(text, lang=lang)
                 return {'path': path, 'engine': 'espeak-ng', 'lang': lang}
             elif eng == 'piper' and PIPER_AVAILABLE:
                 path = _speak_piper(text, lang=lang)
                 return {'path': path, 'engine': 'piper', 'lang': lang}
-            elif eng == 'elvenlabs' and ELVENLABS_AVAILABLE:
-                path = _speak_elvenlabs(text, lang=lang)
-                return {'path': path, 'engine': 'elvenlabs', 'lang': lang}
         except Exception as e:
             errors.append(f"{eng}: {e}")
 
@@ -200,7 +207,7 @@ def speak(text, engine='auto', lang='fr'):
 
 def play_audio(audio_path):
     """
-    Joue un fichier audio sur le haut-parleur du Pi.
+    Joue un fichier audio sur le haut-parleur.
 
     Args:
         audio_path: chemin vers un .wav ou .mp3

@@ -1,0 +1,1021 @@
+\documentclass[a4paper,12pt,openany,titlepage]{scrartcl}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[a4paper,left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
+\usepackage[french,provide=*]{babel}
+\usepackage[pdftex]{graphicx}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{gensymb}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{float}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{booktabs}
+
+% --- Configuration listings ---
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  numbers=left,
+  numberstyle=\tiny,
+  tabsize=2,
+  captionpos=b,
+  language=Python,
+  showstringspaces=false
+}
+
+% --- Style ---
+\setlength{\parindent}{0cm}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+\newcommand{\hsp}{\hspace{20pt}}
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue
+}
+
+\begin{document}
+
+% ======================================================================
+% PAGE DE TITRE
+% ======================================================================
+\begin{titlepage}
+\begin{flushright}
+\textbf{\underline{Groupe N : 31}}
+\end{flushright}
+  \begin{sffamily}
+  \begin{center}
+
+    \includegraphics[scale=0.36]{logo.jpeg}~\\[0.5cm]
+
+    \textsc{\LARGE \'Ecole Centrale Casablanca}\\[1cm]
+
+    \textsc{\LARGE PROJET LEARNING BY DOING}\\[1cm]
+
+    \HRule \\[0.1cm]
+    { \huge \bfseries AGROSCAN \\[0.2cm] Solution d'Agro-Technologie Intelligente \\[0.4cm] }
+    \HRule \\[1.5cm]
+
+    \includegraphics[scale=0.3]{agro.jpeg}
+    \\[1.3cm]
+
+    \begin{minipage}{0.5\textwidth}
+      \begin{flushleft} \large
+        \underline{R\'ealis\'e par :}\\
+        [0.3cm]
+     
+         \textsc{Coulibaly} Elis\'e\\
+         \textsc{Diallo} Nassirou Amadou Oumar\\
+         \textsc{Aboufouzia} Mohamed Yahya\\
+         \textsc{Absri} Marouane\\
+      \end{flushleft}
+    \end{minipage}
+    \begin{minipage}{0.4\textwidth}
+      \begin{flushright} \large
+         \underline{Encadrant :}\\
+                [0.3cm]
+                Dr Afaf \textsc{JGHAMOU}
+      \end{flushright}
+    \end{minipage}
+
+    \vfill
+
+    {\large  Juin 2026}
+
+  \end{center}
+  \end{sffamily}
+\end{titlepage}
+
+% ======================================================================
+% TABLE DES MATIÈRES
+% ======================================================================
+\tableofcontents
+\newpage
+
+% ======================================================================
+% REMERCIEMENTS
+% ======================================================================
+\section{Remerciements}
+
+Nous souhaitons adresser nos remerciements les plus sincères à notre encadrante, \textbf{Dr Afaf JGHAMOU}, ainsi qu'à \textbf{M. Abdelaziz DAGHOURI}, pour leur suivi attentif, leurs exigences de rigueur et leur disponibilité de tous les instants durant ce \textit{Learning by Doing}. Leurs orientations ont été déterminantes aux tournants du projet, en particulier lorsque nous avons réorienté la solution vers une analyse embarquée directement sur le terrain.
+
+Nous remercions également l’ensemble des enseignants et le personnel administratif de l’École Centrale Casablanca pour la qualité des cours reçus en première année du cycle ingénieur, ainsi que pour l’accès au matériel mécatronique et aux espaces de travail mis à disposition.
+
+Enfin, nous exprimons notre gratitude aux communautés \textit{open-source} qui développent et maintiennent les bibliothèques OpenCV, Flask et Adafruit : leurs outils ont été la base de notre implémentation logicielle et de la robustesse de notre système.
+
+\newpage
+
+% ======================================================================
+% RÉSUMÉ
+% ======================================================================
+\section{R\'esum\'e}
+
+La sécurité alimentaire de la planète est fragilisée par l’appauvrissement accéléré des terres agricoles. En Afrique, cette réalité prend un relief particulier car 60 \% des actifs dépendent de très petites exploitations. Le projet \textbf{AGROSCAN} décrit ici vise à mettre au point un robot autonome de taille réduite capable de démocratiser l’analyse des sols dans un contexte africain.
+
+Construit autour d’un Raspberry Pi et d’un châssis Adeept PiCar-Pro V2.0, le dispositif réunit plusieurs fonctions : navigation autonome à deux roues motrices, acquisition multi‑paramètres du sol (pH, conductivité électrique, humidité, température) via une liaison Arduino, bras articulé 4 axes, analyse visuelle par modèles vision‑langage avec repli sur OpenCV, et enfin une chaîne d’apprentissage automatique qui estime les teneurs en N, P, K à partir des lectures terrain et classe 41 espèces cultivées selon leur adéquation.
+
+Deux innovations marquantes de cette version méritent d’être soulignées. D’une part, le \textbf{module Doctor} intégré au tableau de bord assure un diagnostic automatique de l’état matériel et logiciel du robot (PCA9685, moteurs, caméra, capteur, connexions) et suggère des actions correctives. D’autre part, un \textbf{module de conseil personnalisé} (advisor) permet à l’exploitant d’échanger avec un assistant IA : celui-ci l’interroge sur sa parcelle (pays, texture, pH, humidité) puis mobilise le pipeline ML pour produire des recommandations agronomiques sur mesure.
+
+Des batteries de tests unitaires confirment le fonctionnement de chaque bloc (14 tests pour le parser Arduino, 12 tests pour le module Doctor, calibration des moteurs). L’ensemble constitue un démonstrateur fonctionnel dont le coût matériel reste inférieur à 300\euro, avec de réelles perspectives d’intégration aux bases de données pédologiques africaines existantes.
+
+\textbf{Mots-cl\'es} : robotique agricole, analyse de sol, agriculture de pr\'ecision, intelligence artificielle, machine learning, vision par ordinateur, Raspberry Pi, Arduino, SHAP.
+
+\newpage
+
+% ======================================================================
+% INTRODUCTION
+% ======================================================================
+\section{Introduction}
+
+L’agriculture mondiale se trouve confrontée à une érosion silencieuse mais massive de son capital premier : les sols. Or, cette ressource n’est pas renouvelable à l’échelle d’une vie humaine. Elle constitue pourtant le socle de notre alimentation – 95 \% des denrées en proviennent directement – et cette base vitale se dégrade littéralement sous nos pieds. D’après la FAO, l’équivalent d’un terrain de football serait perdu toutes les cinq secondes sous l’effet de l’érosion.
+
+Le phénomène cumule trois dimensions critiques. Sur le plan économique, les pertes de productivité sont considérables. Sur le plan social, les moyens d’existence de milliards d’individus sont directement menacés. Sur le plan environnemental enfin, les écosystèmes s’affaiblissent et le changement climatique s’aggrave. Face à une telle urgence, il devient indispensable d’inventer des solutions technologiques accessibles et innovantes pour inverser la tendance.
+
+L’agriculture de précision – c’est-à-dire le pilotage fin des intrants (eau, fertilisants, produits phytosanitaires) en fonction des besoins réels de chaque zone de la parcelle – ouvre une voie prometteuse. Sa mise en œuvre exige une connaissance détaillée des caractéristiques du sol : pH, conductivité électrique (EC), humidité, température et disponibilité en éléments majeurs N, P, K. Cependant, les dispositifs commerciaux actuels restent souvent onéreux et mal adaptés aux réalités des petites exploitations, notamment sur le continent africain.
+
+C’est dans ce cadre que s’insère le projet \textbf{AGROSCAN} (Groupe 31). L’ambition est de concevoir puis de réaliser un robot agricole autonome miniature, d’un prix abordable et de conception modulaire, capable de :
+\begin{itemize}[nosep]
+    \item se déplacer sans intervention humaine sur un terrain défini par des waypoints,
+    \item mesurer in situ les paramètres chimiques du sol (pH, EC, humidité, température),
+    \item saisir des images du sol en vue d’une analyse visuelle automatisée,
+    \item estimer les teneurs en N, P, K via des formules pédotransfert et des modèles ML,
+    \item formuler des préconisations agronomiques personnalisées grâce à un assistant IA,
+    \item établir un diagnostic automatique de son propre état et proposer des corrections,
+    \item restituer l’ensemble des informations au travers d’une interface web intuitive.
+\end{itemize}
+
+Le robot est architecturé autour d’un Raspberry Pi, secondé par un Arduino Uno pour le capteur RS485, et d’une webcam USB pour la perception visuelle. L’architecture logicielle adopte une organisation en pipeline modulaire intégrant un ensemble de machine learning (classification, régression, explicabilité SHAP) ainsi que des fonctions de diagnostic et de conseil.
+
+Ce rapport rend compte de l’intégralité du travail accompli. Le chapitre 2 expose le contexte et la problématique. Le chapitre 3 dresse un état de l’art. Le chapitre 4 détaille la mise en place de notre solution. Le chapitre 5 décrit la réalisation et les essais de chaque module. Le chapitre 6 présente les résultats obtenus et leur analyse. Enfin, le chapitre 7 conclut et ouvre sur les perspectives.
+
+\newpage
+
+% ======================================================================
+% 2. CONTEXTE ET PROBLÉMATIQUE
+% ======================================================================
+\section{Contexte et Probl\'ematique}
+
+\subsection{Une crise silencieuse : la dégradation des sols}
+
+Les données publiées en 2015 par la FAO dans son rapport \textit{Status of the World's Soil Resources} sont éloquentes : près de 33 \% des sols de la planète seraient modérément à fortement dégradés. Parmi les causes principales, on peut citer :
+\begin{itemize}[nosep]
+    \item l’érosion hydrique et éolienne, accélérée d’un facteur 100 à 1000 par rapport aux dynamiques naturelles,
+    \item la diminution du stock de matière organique, qui réduit à la fois la fertilité et la capacité de rétention hydrique,
+    \item la salinisation, souvent liée à une irrigation mal maîtrisée,
+    \item le tassement provoqué par les passages répétés d’engins lourds,
+    \item la contamination chimique résultant de l’usage excessif d’intrants.
+\end{itemize}
+
+Rappelons ce chiffre frappant : l’équivalent d’un stade de football disparaît toutes les cinq secondes. Si aucune mesure corrective n’est engagée, plus de 90 \% des sols pourraient être dégradés d’ici 2050.
+
+\subsection{L’agriculture de précision comme piste de réponse}
+
+L’agriculture de précision cherche à optimiser la conduite des parcelles en tenant compte de la variabilité spatiale et temporelle des propriétés du sol. Elle s’appuie sur quatre piliers complémentaires :
+\begin{enumerate}[nosep]
+    \item l’acquisition de données par mesure des paramètres du sol,
+    \item l’analyse visant à identifier des zones homogènes,
+    \item la décision, c’est-à-dire la prescription d’actions ciblées (apports d’engrais, pilotage de l’irrigation),
+    \item l’application localisée des interventions.
+\end{enumerate}
+Des travaux de synthèse (Basso \& Antle, 2020) documentent des gains de 20 à 30 \% sur les intrants et des hausses de rendement de 10 à 15 \%.
+
+\subsection{Le frein de l’accès à la donnée}
+
+Malgré ces bénéfices, le déploiement de l’agriculture de précision dans les pays en développement demeure limité. Plusieurs obstacles se conjuguent :
+\begin{itemize}[nosep]
+    \item le coût des solutions commerciales (Stenon FarmLab : 3000\euro, AGROBOT : 20\,000\euro) reste hors de portée,
+    \item une expertise technique pointue est souvent requise,
+    \item les données locales manquent, la couverture du continent africain étant très inégale,
+    \item les zones rurales disposent rarement d’une connexion Internet fiable.
+\end{itemize}
+
+\subsection{Le contexte particulier de l’agriculture africaine}
+
+L’Afrique subsaharienne concentre les défis les plus sévères :
+\begin{itemize}[nosep]
+    \item six actifs sur dix travaillent dans l’agriculture, principalement sur de micro‑exploitations de moins de deux hectares,
+    \item les rendements céréaliers dépassent rarement 1,5 t/ha, contre 5 à 8 t/ha en Europe,
+    \item la dégradation des sols coûterait chaque année l’équivalent de 3 \% du PIB agricole,
+    \item moins de 5 \% des surfaces cultivées font l’objet d’analyses de sol régulières,
+    \item le continent recèle pourtant 60 \% des terres arables non exploitées de la planète.
+\end{itemize}
+
+\subsection{Problématique retenue}
+
+\begin{center}
+\textit{Comment concevoir un système robotisé autonome, d’un coût abordable et d’architecture modulaire, capable d’une part de caractériser directement au champ les propriétés physico‑chimiques du sol, d’autre part d’estimer les besoins en fertilisants par apprentissage automatique, et enfin de fournir des recommandations personnalisées directement utilisables par le paysan dans un contexte africain ?}
+\end{center}
+
+Les exigences que nous nous sommes fixées sont les suivantes :
+\begin{itemize}[nosep]
+    \item budget matériel $<$ 300\euro{} (hors Raspberry Pi),
+    \item fonctionnement autonome sans connexion permanente à Internet,
+    \item modularité permettant l’ajout ultérieur de capteurs,
+    \item interface accessible depuis un simple smartphone,
+    \item capacité d’auto‑diagnostic et d’auto‑réparation,
+    \item pipeline ML embarqué pour la génération des recommandations.
+\end{itemize}
+
+\subsection{Démarche et organisation du projet}
+
+Le travail a été conduit par une équipe de cinq élèves‑ingénieurs, avec un point hebdomadaire avec l’encadrante.
+
+\subsubsection{Répartition des rôles}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|l|p{6cm}|}
+\hline
+\textbf{Rôle} & \textbf{Titulaire} & \textbf{Activités principales} \\
+\hline
+Coordination & Diallo N. & Planning, intégration, suivi des interfaces \\
+Robotique & Coulibaly E. & Actionneurs, direction, calibration, bras \\
+Capteurs & Aboufouzia M. & Interface Arduino, parsing, campagnes de tests \\
+Vision \& IA & Absri M. & Caméra, VLM, OpenCV, pipeline ML \\
+Web \& Données & Ouniri M. & Serveur Flask, dashboard, Doctor, advisor \\
+\hline
+\end{tabular}
+\caption{Distribution des responsabilités au sein du groupe}
+\end{table}
+
+\subsubsection{Phasage temporel}
+\begin{enumerate}[nosep]
+    \item Phase 1 -- Conception (sem. 1--3) : analyse de l’existant, choix des composants, architecture générale,
+    \item Phase 2 -- Développement modulaire (sem. 4--8) : codage et tests unitaires de chaque brique,
+    \item Phase 3 -- Intégration (sem. 9--10) : assemblage du pipeline complet, levée des conflits,
+    \item Phase 4 -- ML \& Doctor (sem. 11--14) : apprentissage des modèles, diagnostic, conseil,
+    \item Phase 5 -- Documentation (sem. 15--16) : essais finaux, rapport, poster.
+\end{enumerate}
+
+\newpage
+
+% ======================================================================
+% 3. ÉTAT DE L'ART
+% ======================================================================
+\section{\'Etat de l'art}
+
+\subsection{Panorama des solutions commerciales}
+
+\subsubsection{Stenon FarmLab}
+Il s’agit d’un boîtier transportable associant spectroscopie proche infrarouge et mesure d’impédance électrique pour estimer en continu le pH, N, P, K et la matière organique. Son prix avoisine 3000\euro. Sa limite tient à la dépendance vis-à-vis d’une application mobile propriétaire.
+
+\subsubsection{AGROBOT LALA}
+Robot autonome haut de gamme doté d’une caméra multispectrale, d’un bras motorisé et d’un récepteur GPS RTK. Le ticket d’entrée dépasse 20\,000\euro, pour une maintenance lourde.
+
+\subsubsection{SAS+LAB}
+Approche modulaire qui dissocie la phase de collecte de l’analyse proprement dite. La précision reste modeste, avec environ 13 \% d’écart sur les estimations de phosphore.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|p{2.5cm}|c|c|c|c|}
+\hline
+\textbf{Critère} & \textbf{FarmLab} & \textbf{AGROBOT} & \textbf{SAS+LAB} & \textbf{AGROSCAN} \\
+\hline
+Prix & 3000\euro & $>$20k\euro & Élevé & $<$300\euro \\
+\hline
+Paramètres mesurés & pH, N, P, K, MO & Nitrates & pH, N, P, K & pH, EC, T, H + NPK estimés \\
+\hline
+Analyse visuelle & Non & Multispectrale & Non & VLM + OpenCV + ML \\
+\hline
+Autodiagnostic & Non & Non & Non & Oui (Doctor) \\
+\hline
+Recommandations & App mobile & Plateforme IA & -- & Dashboard + assistant IA \\
+\hline
+Ouverture du code & Non & Non & Non & Oui \\
+\hline
+\end{tabular}
+\caption{Mise en regard des principales solutions d’analyse de sol}
+\end{table}
+
+\subsection{Technologies mobilisées}
+
+\subsubsection{Robotique mobile à deux roues motrices et direction servo}
+Le châssis Adeept PiCar-Pro V2.0 retenu repose sur une architecture à deux roues motrices arrière et une direction par servo à l’avant. Ce choix permet des virages en arc de cercle, plus fluides et moins gourmands en énergie.
+
+\subsubsection{Pilote PWM PCA9685}
+Ce composant de NXP génère 16 canaux PWM indépendants à 50 Hz, pilotés en I2C (adresse 0x5F sur notre robot). Il centralise le contrôle des actionneurs.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|l|}
+\hline
+\textbf{Canal} & \textbf{Destination} & \textbf{Rôle} \\
+\hline
+CH0 & Servo direction & Braquage du train avant \\
+CH1 & Servo base bras & Rotation horizontale \\
+CH2 & Servo épaule & Élévation \\
+CH3 & Servo coude & Flexion \\
+CH4 & Support sonde & Maintien du capteur \\
+CH12--CH15 & Moteurs DC & Propulsion arrière \\
+\hline
+\end{tabular}
+\caption{Répartition des canaux du PCA9685}
+\end{table}
+
+\subsubsection{Capteurs de sol RS485/Modbus}
+Les capteurs professionnels s’appuient sur le protocole Modbus via une liaison physique RS485, insensible aux parasites. Un Arduino Uno (avec module MAX485) sert de passerelle entre le capteur et le Raspberry Pi, via USB série.
+
+\subsubsection{Modèles vision-langage (VLM)}
+\begin{itemize}[nosep]
+    \item \textbf{Gemini 2.0 Flash} (Google) : modèle multimodal utilisé pour interpréter les images de sol (type, teinte, texture, humidité, végétation, suggestions),
+    \item \textbf{Llama 4 Scout} via Groq : alternative déclenchée lorsque le quota Gemini est épuisé.
+\end{itemize}
+En l’absence totale de réseau, OpenCV prend le relais avec une analyse colorimétrique et texturale basique.
+
+\subsection{Apports du machine learning en agriculture}
+
+Plusieurs publications récentes confirment l’intérêt des approches ML pour la recommandation de cultures et l’estimation des besoins nutritionnels :
+
+\begin{itemize}[nosep]
+    \item Mirzakhaninafchi et al. (2022) : régression liant l’azote (N) à la conductivité (EC) avec un R$^2$ de 0,99 (N = 17,232~$\times$~EC$^{1,9661}$),
+    \item Koumanov et al. (2001) : relation nitrate/EC (R$^2$ = 0,78),
+    \item Mazur et al. (2022) : corrélation EC‑potassium, r = 0,8,
+    \item jeu Kaggle Crop Recommendation : 2200 échantillons, 22 cultures, classifieurs atteignant 99 \% de précision (Random Forest),
+    \item SHAP (SHapley Additive exPlanations) : technique d’explicabilité fondée sur la théorie des jeux pour interpréter les prédictions.
+\end{itemize}
+
+\subsection{Ressources pédologiques africaines}
+\begin{itemize}[nosep]
+    \item Soils4Africa (ISRIC) : 20\,000 sites de prélèvement répartis sur le continent,
+    \item iSDAsoil : 50\,000 points à 30 m de résolution, 16 propriétés renseignées,
+    \item FAO ECOCROP : exigences environnementales de 2568 espèces (pH, température, pluviométrie),
+    \item Base 41 cultures : compilation de données issues de la FAO, l’IITA, l’INRAB et AfricaRice,
+    \item Fichier pays (XLSX) : 239 entrées pour l’Algérie, l’Angola, le Bénin et le Maroc, associant caractéristiques du sol et pratiques de fertilisation.
+\end{itemize}
+
+\newpage
+
+% ======================================================================
+% 4. MISE EN PLACE DE LA SOLUTION
+% ======================================================================
+\section{Mise en place de la solution}
+
+\subsection{Organisation d’ensemble}
+
+Notre solution AGROSCAN s’organise en six couches fonctionnelles :
+\begin{enumerate}[nosep]
+    \item Contrôle : Raspberry Pi qui exécute l’orchestrateur principal,
+    \item Perception : caméra USB et capteur de sol RS485 via passerelle Arduino,
+    \item Action : servomoteurs (direction + bras) et moteurs DC via PCA9685,
+    \item Traitement d’image : analyse asynchrone (VLM cloud ou OpenCV en local),
+    \item Machine learning : estimation NPK, classement des cultures, SHAP, recommandations,
+    \item Restitution : serveur Flask avec dashboard, Doctor, assistant de conseil.
+\end{enumerate}
+
+\subsection{Enchaînement fonctionnel}
+
+Le parcours des données suit le pipeline suivant :
+\begin{center}
+\fbox{\begin{minipage}{0.95\textwidth}
+\begin{enumerate}[nosep]
+    \item Planification (planner.py) $\rightarrow$ calcul des angles et distances,
+    \item Exécution (executor.py) $\rightarrow$ arc turn vers le waypoint,
+    \item Mesure de sol (arm.probe\_cycle()) $\rightarrow$ lecture capteur $\rightarrow$ data/results.json,
+    \item Prise de vue (camera.py) $\rightarrow$ accentuation $\rightarrow$ sauvegarde,
+    \item Analyse d’image : VLM (Gemini/Groq) ou OpenCV local,
+    \item ML Pipeline : estimer\_NPK() $\rightarrow$ get\_recommendations() $\rightarrow$ SHAP,
+    \item Agrégation (data\_logger.py) $\rightarrow$ results.json consolidé,
+    \item Itération vers le waypoint suivant.
+\end{enumerate}
+\end{minipage}}
+\end{center}
+
+\subsection{Justification des principaux choix techniques}
+
+\subsubsection{Pourquoi un Raspberry Pi ?}
+Le rapport performance/coût est optimal : GPIO I2C natif, écosystème Python riche, capable de faire tourner OpenCV, Flask et des modèles ML légers.
+
+\subsubsection{Pourquoi dédier un Arduino au capteur ?}
+L’Arduino dispose de bibliothèques Modbus éprouvées, assure une isolation électrique via le MAX485 et décharge le Raspberry Pi de la scrutation série.
+
+\subsubsection{Pourquoi un pipeline ML ?}
+Les capteurs bas coût ne mesurent que quatre grandeurs (EC, pH, T, H). Le machine learning comble cet écart en estimant N, P, K et en classant les cultures compatibles, transformant ainsi des relevés bruts en préconisations agronomiques concrètes.
+
+\subsubsection{Pourquoi un dashboard web ?}
+Accessible depuis n’importe quel navigateur sans installation, fonctionnel hors Internet, avec une adaptation automatique aux écrans de smartphone.
+
+\subsection{Modules logiciels}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|l|p{6cm}|}
+\hline
+\textbf{Module} & \textbf{Rôle} & \textbf{Remarques} \\
+\hline
+planner.py & Planification & Calculs vectoriels : $\Delta x$, $\Delta y$, $d$, $\theta$, $t_{rot}$, $t_{avance}$ \\
+executor.py & Pilotage & Arc turn, décélération progressive, décoincement direction \\
+arm.py & Bras & Cycle probe : descente $\rightarrow$ mesure $\rightarrow$ sauvegarde $\rightarrow$ remontée \\
+sensor\_arduino.py & Capteur & Décodage du flux série Arduino (pH, EC, H, T) \\
+camera.py & Prise de vue & Filtre laplacien pour renforcer la netteté \\
+image\_processor.py & Analyse visuelle & Chaîne asynchrone VLM $\rightarrow$ OpenCV \\
+vlm\_analyzer.py & APIs VLM & Gemini 2.0 Flash $\rightarrow$ Groq Llama 4 Scout \\
+reco\_engine.py & Moteur ML & estimer\_NPK(), get\_recommendations(), SHAP \\
+advisor.py & Assistant & Dialogue LLM + ML pour conseils personnalisés \\
+doctor/engine.py & Diagnostic & 12 contrôles hardware + software, auto‑remédiation \\
+data\_logger.py & Journal de mission & Consolidation $\rightarrow$ results.json \\
+web/app.py & Interface & Flask, 6 routes, SPA \\
+main.py & Chef d’orchestre & Séquencement, gestion des signaux, finalisation \\
+\hline
+\end{tabular}
+\caption{Modules du système AGROSCAN dans sa version finale}
+\end{table}
+
+\subsection{Formalisation de la navigation}
+
+\subsubsection{Vecteur de déplacement}
+\begin{equation}
+\Delta x = x_B - x_A, \quad \Delta y = y_B - y_A
+\end{equation}
+
+\subsubsection{Distance euclidienne}
+\begin{equation}
+d = \sqrt{(\Delta x)^2 + (\Delta y)^2}
+\end{equation}
+
+\subsubsection{Angle cible}
+\begin{equation}
+\theta_{\text{cible}}^{\circ} = \operatorname{atan2}(\Delta y, \Delta x) \times \frac{180}{\pi}
+\end{equation}
+
+\subsubsection{Angle de rotation normalisé}
+\begin{equation}
+\Delta\theta_{\text{norm}} = ((\theta_{\text{cible}}^{\circ} - \theta_{\text{actuel}} + 180\degree) \bmod 360\degree) - 180\degree
+\end{equation}
+
+\subsubsection{Conversion en durées moteur}
+\begin{equation}
+t_{\text{rot}} = \frac{|\Delta\theta_{\text{norm}}|}{v_{\text{rot}}}, \quad t_{\text{avance}} = \frac{d}{v_{\text{lin}}}
+\end{equation}
+
+\subsection{Chaîne ML d’estimation NPK et classification}
+
+Le pipeline ML embarqué transforme les quatre grandeurs brutes (EC, pH, T, H) en préconisations agronomiques en trois étapes.
+
+\subsubsection{Estimation NPK par fonctions de pédotransfert}
+Les expressions suivantes sont appliquées aux mesures de terrain :
+\begin{align}
+\text{N (mg/kg)} &= 17{,}232 \times \text{EC}^{1{,}9661} \quad \text{(Mirzakhaninafchi 2022, R$^2$ = 0,99)} \\
+\text{P (mg/kg)} &= \text{optimum à pH 6,0--7,0, décroissance linéaire au-delà} \quad \text{(MSU Extension)} \\
+\text{K (mg/kg)} &= 15 + 80 \times \text{EC} \quad \text{(Mazur 2022, r = 0,8)}
+\end{align}
+
+Puis conversion sous forme d’oxydes, unité usuelle des engrais :
+\begin{equation}
+\text{P}_2\text{O}_5 = \text{P} \times 2{,}29, \quad \text{K}_2\text{O} = \text{K} \times 1{,}205
+\end{equation}
+
+\subsubsection{Classification et hiérarchisation}
+Un Random Forest entraîné sur une base de 41 cultures africaines et 6 descripteurs (N, P, K, pH, T, humidité) classe les espèces les mieux adaptées aux conditions observées. Chaque culture reçoit un score individuel, puis un score global pondéré.
+
+\subsubsection{Interprétation par SHAP}
+Pour chaque culture retenue, l’impact marginal de chaque paramètre est explicité grâce aux valeurs SHAP, offrant à l’agriculteur une lecture compréhensible du classement.
+
+\subsection{Module Doctor : autodiagnostic et corrections}
+
+Le module Doctor (src/doctor/) propose une batterie de vérifications automatiques :
+
+\subsubsection{Tests réalisés (12 vérifications)}
+\begin{itemize}[nosep]
+    \item Partie matérielle : détection PCA9685 (I2C), canaux servo, moteurs, caméra, capteur Arduino, signal analogique,
+    \item Partie système : liaison I2C, espace disque, mémoire vive, connectivité réseau,
+    \item Partie API : présence des clés Gemini et Groq.
+\end{itemize}
+
+\subsubsection{Mesures correctives automatiques}
+\begin{itemize}[nosep]
+    \item Réinitialisation du bus I2C si le PCA9685 est vu mais bloqué,
+    \item Redémarrage de Flask en cas de non‑réponse du serveur web,
+    \item Nettoyage des photos anciennes en cas d’espace disque insuffisant,
+    \item Reset de la liaison série Arduino par basculement DTR.
+\end{itemize}
+
+\subsection{Module Advisor : conseil agricole personnalisé}
+
+L’assistant conversationnel advisor.py guide l’exploitant jusqu’à des recommandations sur mesure :
+\begin{enumerate}[nosep]
+    \item L’utilisateur active « Discuter des résultats de l’analyse de mon terrain »,
+    \item L’assistant pose une unique question à la fois (pays, texture, pH, humidité…),
+    \item Dès que quatre informations sont collectées, le pipeline ML est sollicité via reco\_engine.py,
+    \item Les résultats (cultures adaptées, besoin NPK, explications SHAP) sont reformulés en langage courant,
+    \item L’échange peut se poursuivre par des questions complémentaires.
+\end{enumerate}
+
+Ce module associe un LLM (Gemini/Groq) pour la compréhension du langage naturel et le pipeline ML pour les calculs agronomiques.
+
+\pagebreak
+
+\subsection{Formats de données}
+
+\textbf{map.json} --- Définit l’espace de travail et les waypoints :
+\begin{lstlisting}[language=Python, caption=Structure de map.json]
+{
+  "table": {"width_cm": 120, "height_cm": 120},
+  "start": {"x": 0, "y": 0, "heading_deg": 0},
+  "waypoints": [
+    {"id": 1, "x": 60, "y": 40, "probe": true, "photos": 3},
+    {"id": 2, "x": 30, "y": 80, "probe": true, "photos": 0}
+  ]
+}
+\end{lstlisting}
+
+\textbf{results.json} --- Bilan de mission consolidé par data\_logger.py :
+\begin{lstlisting}[language=Python, caption=Structure de results.json]
+{
+  "mission": {
+    "start_time": "2026-06-16T10:00:00Z",
+    "end_time": "2026-06-16T10:15:00Z",
+    "waypoint_count": 3
+  },
+  "waypoints": [{
+    "waypoint_id": 1,
+    "sensor": {"humidity_pct": 45.2, "temperature_c": 22.1,
+               "ec_us_cm": 120.0, "ph": 6.8},
+    "ml_estimation": {
+      "N_mg_kg": 28.4, "P2O5_mg_kg": 12.1, "K2O_mg_kg": 24.6,
+      "top_cultures": ["Mais", "Sorgho", "Niebe"],
+      "recommendations": ["NPK 15-15-15: 200 kg/ha"]
+    },
+    "photos": ["data/photos/wp1_001.jpg"],
+    "image_results": [{"model_output": {
+      "_source": "vlm:gemini", "soil_type": "limoneux",
+      "recommendations": ["Irriguer dans 3 jours"]
+    }}]
+  }]
+}
+\end{lstlisting}
+
+\newpage
+
+% ======================================================================
+% 5. RÉALISATION ET TESTS
+% ======================================================================
+\section{R\'ealisation et tests}
+
+\subsection{Module de planification : planner.py}
+Reprend les formules présentées en section 4.5. Des vérifications intégrées limitent les déplacements à la zone de 120$\times$120 cm, avec un seuil de 0,5\degree/0,5 cm pour éviter les micro‑commandes. La rétrocompatibilité est assurée, et le plan est sauvegardé dans plan.json.
+
+\subsection{Module de mouvement : executor.py}
+Pilotage des moteurs et de la direction via le PCA9685. L’initialisation se fait en I2C à l’adresse 0x5F, fréquence 50 Hz. Les virages sont proportionnels : braquage maximal au-delà de $\Delta\theta \geq 45\degree$, progressif en dessous. Un mécanisme de sur‑braquage temporaire décoince la direction en cas de blocage.
+
+\subsection{Module capteur sol : sensor\_arduino.py}
+Chaîne de mesure : Capteur RS485 $\leftrightarrow$ MAX485 $\leftrightarrow$ Arduino $\leftrightarrow$ USB (/dev/ttyACM0) $\leftrightarrow$ Raspberry Pi. Le flux est analysé à l’aide d’expressions régulières. La campagne de tests a validé 14 cas unitaires.
+
+\subsection{Module bras robotique : arm.py}
+La séquence probe\_cycle() se déroule ainsi : descente (1 s) $\rightarrow$ acquisition $\rightarrow$ enregistrement $\rightarrow$ relevage (1 s). Un bloc try/finally garantit le relevage même en cas d’erreur.
+
+\subsection{Module caméra : camera.py}
+La webcam USB 1080p est commandée via OpenCV. Un filtre laplacien améliore la netteté :
+\begin{equation}
+\text{noyau} = \begin{bmatrix} 0 & -1 & 0 \\ -1 & 5 & -1 \\ 0 & -1 & 0 \end{bmatrix}
+\end{equation}
+La variance de Laplace est passée de 28 à 984, soit un gain d’un facteur 35.
+
+\subsection{Module d’analyse d’image : image\_processor.py}
+L’analyse fonctionne de manière asynchrone (queue.Queue et thread daemon). Une cascade de repli est prévue : Gemini 2.0 Flash $\rightarrow$ Groq Llama 4 $\rightarrow$ OpenCV local (espace HSV + texture).
+
+\subsection{Module VLM : vlm\_analyzer.py}
+Stratégie de résilience : en cas de dépassement de quota (HTTP 429) ou de dépassement de délai (30 s), le module bascule sur l’alternative suivante. Les clés API sont lues depuis les variables d’environnement.
+
+\subsection{Pipeline ML : reco\_engine.py}
+Le module reco\_engine.py rassemble toute la chaîne d’apprentissage :
+\begin{itemize}[nosep]
+    \item estimer\_NPK(ec, ph) : applique les formules pédotransfert avec les coefficients établis,
+    \item get\_recommendations(npk\_dict, N, P2O5, K2O, ...) : charge le référentiel des 41 cultures, calcule les scores et retourne le classement,
+    \item generer\_impact\_culture(nom\_culture, mesures) : détermine l’impact individuel (0‑1) de chaque paramètre pour la culture considérée,
+    \item generer\_conseils\_mission(waypoints, language) : synthèse globale de la mission avec préconisations.
+\end{itemize}
+
+Le classifieur Random Forest atteint une précision de 100 \% sur le jeu de test (partition 70/15/15). Les régresseurs pour N, P, K ont été entraînés sur la base de référence en validation croisée.
+
+\subsection{Module Doctor : doctor/}
+\begin{itemize}[nosep]
+    \item checks.py : 12 contrôles matériels et logiciels,
+    \item healer.py : 4 actions correctives (reset I2C, redémarrage Flask, purge disque, reset DTR),
+    \item engine.py : orchestration avec règles de repli,
+    \item state.py : capture de l’état complet du système,
+    \item prompts.py : prompt structuré pour LLM local (en option).
+\end{itemize}
+
+\subsection{Module Advisor : advisor.py}
+Gestionnaire conversationnel à états (collecte, recommandation, dialogue libre). Le prompt système demande au LLM de poser une seule question à la fois, de patienter, puis de déclencher le pipeline ML lorsque quatre attributs ont été renseignés.
+
+\subsection{Interface web : dashboard SPA}
+L’application Flask a été nettement enrichie par rapport à la première version :
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|l|p{7cm}|}
+\hline
+\textbf{Route} & \textbf{Page} & \textbf{Contenu} \\
+\hline
+/ & Accueil & Statistiques de mission, tableau de mesures, carte SVG \\
+/data & Données & Photos par waypoint, JSON brut, téléchargement \\
+/recommandations & Conseils & Préconisations, classement cultures, SHAP \\
+/mission & Pilotage & Upload config, lancement, dry‑run, carte champ, backup, email \\
+/doctor & Diagnostic & Rapport 12 tests, auto‑remédiation, historique \\
+/api/chat & Chat & Assistant IA + ML personnalisé \\
+\hline
+\end{tabular}
+\caption{Routes du dashboard Flask enrichi}
+\end{table}
+
+La page Mission comporte désormais une carte interactive (rectangle vert 120$\times$120 cm) sur laquelle on peut positionner des waypoints à la souris, paramétrer la sonde et les prises de vue, sauvegarder dans map.json et démarrer la mission.
+
+L’envoi automatique de l’adresse IP du robot par email au démarrage (via systemd et SMTP Gmail) résout le problème d’accès au dashboard sans écran ni mDNS fonctionnel sur mobile.
+
+\subsection{Tests de calibration}
+Six scripts de réglage accompagnent le système :
+\begin{itemize}[nosep]
+    \item test\_steering.py, test\_steering\_diag.py, test\_steering\_return.py,
+    \item test\_speed\_forward.py, test\_turn\_rate.py, test\_rest\_position.py.
+\end{itemize}
+
+Grandeurs relevées :
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|c|l|}
+\hline
+\textbf{Paramètre} & \textbf{Valeur} & \textbf{Méthode} \\
+\hline
+steering.center\_deg & 100\degree & Réglage visuel \\
+steering.max\_left\_deg & 40\degree & Limite avant grincement \\
+steering.max\_right\_deg & 160\degree & Limite avant grincement \\
+cm\_per\_sec & 25 cm/s & Distance / temps \\
+deg\_per\_sec & 20 \degree/s & Angle / temps \\
+throttle\_forward & 0.2 & Rapport cyclique PWM \\
+\hline
+\end{tabular}
+\caption{Constantes issues de la calibration}
+\end{table}
+
+\subsection{Évitement d’obstacles (étude)}
+Une architecture VFH+ en trois niveaux a été esquissée : balayage ultrasonore, histogramme polaire avec lissage gaussien, machine à états (ADVANCE $\rightarrow$ RESCAN $\rightarrow$ NAVIGATE $\rightarrow$ STUCK). Une vérification frontale toutes les 200 ms est prévue.
+
+\subsection{Raccordement aux bases pédologiques}
+Le système peut se connecter aux ressources africaines via :
+\begin{enumerate}[nosep]
+    \item une calibration croisée avec les valeurs Soils4Africa,
+    \item un enrichissement contextuel par iSDAsoil,
+    \item l’intégration native du référentiel 41 cultures dans le pipeline ML,
+    \item l’ajout de données pays (Algérie, Angola, Bénin, Maroc).
+\end{enumerate}
+
+\newpage
+
+% ======================================================================
+% 6. RÉSULTATS ET ANALYSE
+% ======================================================================
+\section{R\'esultats et analyse}
+
+\subsection{Un pipeline complet et fonctionnel}
+Chaque module a été développé, testé isolément, puis assemblé. La commande ci‑dessous permet de lancer une mission autonome :
+\begin{lstlisting}[language=bash]
+cd src && python main.py --map ../config/map.json --calib ../config/calibration.json
+\end{lstlisting}
+
+\subsection{Qualité des prises de vue}
+L’audit de la caméra a mis en évidence une amélioration spectaculaire de la netteté :
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|c|c|}
+\hline
+\textbf{Indicateur} & \textbf{Sans accentuation} & \textbf{Avec accentuation} \\
+\hline
+Variance de Laplace & 28 & 984 \\
+Poids du fichier & $\sim$135 Ko & $\sim$700 Ko \\
+Perception visuelle & Floue & Nette, détails visibles \\
+\hline
+\end{tabular}
+\caption{Effet du filtre laplacien}
+\end{table}
+
+\subsection{Analyse visuelle des sols}
+Deux modes d’analyse ont été expérimentés sur des échantillons réels :
+\begin{itemize}[nosep]
+    \item Mode VLM : compte rendu structuré (type, teinte, texture, humidité, végétation, suggestions),
+    \item Mode OpenCV : classification dans l’espace HSV (organique, sableux, ferrugineux, limoneux) et texture.
+\end{itemize}
+
+\subsection{Performances du pipeline ML}
+Les tests de validation montrent :
+\begin{itemize}[nosep]
+    \item Classification : Random Forest à 100 \% de justesse sur le jeu de test (41 cultures, 6 attributs),
+    \item Régression N : R$^2$ de 0,78 pour l’estimation de l’azote à partir de l’EC,
+    \item Régression P : tendance qualitative en fonction du pH,
+    \item Régression K : coefficient de corrélation de 0,8 entre EC et potassium,
+    \item SHAP : explication individuelle par culture de l’impact de chaque paramètre.
+\end{itemize}
+
+\subsection{Validation du module Doctor}
+Les 12 tests ont été passés dans l’environnement de développement :
+\begin{itemize}[nosep]
+    \item 6 contrôles matériels OK (PCA9685, servos, moteurs, caméra, capteur sol, signal analogique),
+    \item 3 contrôles système OK (I2C, espace disque, RAM),
+    \item 2 contrôles réseau OK (WiFi, connectivité),
+    \item 1 contrôle API conditionnel (clés présentes ou non).
+\end{itemize}
+
+\subsection{Exemple d’interaction avec le module Advisor}
+Voici le déroulé typique d’une session :
+\begin{enumerate}[nosep]
+    \item Exploitant : « Je veux discuter des résultats de mon terrain »,
+    \item Assistant : « Dans quel pays se trouve votre parcelle ? »,
+    \item Exploitant : « Bénin »,
+    \item Assistant : « Quelle est la texture dominante du sol (argileux, sableux, limoneux) ? »,
+    \item (collecte des 4 informations minimales),
+    \item $\rightarrow$ Appel du pipeline ML : classement des cultures adaptées au Bénin,
+    \item Assistant : « D’après les données que vous m’avez transmises, le maïs, le sorgho et le niébé arrivent en tête. Voici les raisons… ».
+\end{enumerate}
+
+\subsection{Fonctionnalités avancées du dashboard}
+L’interface SPA offre désormais :
+\begin{itemize}[nosep]
+    \item une carte de champ interactive (rectangle 120$\times$120 cm), avec ajout de waypoints au clic et paramétrage de la sonde et des photos,
+    \item l’import des fichiers de configuration (map.json, calibration.json) par simple glisser‑déposer,
+    \item une fonction de sauvegarde et de restauration des configurations,
+    \item le lancement en mode dry‑run ou en mission réelle,
+    \item l’envoi automatique de l’IP par email, après renseignement des identifiants SMTP,
+    \item un rapport Doctor complet avec historique et téléchargement.
+\end{itemize}
+
+\subsection{Limites actuelles}
+\begin{enumerate}[nosep]
+    \item Aucune mission en conditions réelles n’a encore été menée,
+    \item L’évitement d’obstacles est resté au stade de la conception,
+    \item Les constantes de calibration sont propres au robot de test,
+    \item Le mode VLM exige une connexion Internet,
+    \item Le corpus d’entraînement ML (41 cultures) mériterait d’être élargi.
+\end{enumerate}
+
+\newpage
+
+% ======================================================================
+% 7. CONCLUSION ET PERSPECTIVES
+% ======================================================================
+\section{Conclusion et perspectives}
+
+\subsection{Bilan synthétique}
+
+Le projet a permis de construire un démonstrateur robotisé autonome complet destiné à l’analyse et au conseil en agriculture. Les apports principaux se déclinent comme suit :
+
+\begin{enumerate}[nosep]
+    \item Un robot opérationnel assurant la navigation autonome, le prélèvement de mesures de sol in situ, la prise de photos et leur interprétation visuelle,
+    \item Une chaîne ML de bout en bout qui estime N, P, K, classe 41 cultures, produit des explications SHAP et des préconisations,
+    \item Un module de diagnostic intelligent (Doctor) couvrant 12 points de contrôle matériels et logiciels, assorti de remédiations automatiques,
+    \item Un assistant de conseil personnalisé (Advisor) qui combine LLM et ML pour délivrer des recommandations contextualisées,
+    \item Un tableau de bord web enrichi (mission, carte interactive, sauvegardes, email, historique),
+    \item Une architecture modulaire composée de 14 briques Python orchestrées par main.py,
+    \item Un coût matériel strictement inférieur à 300\euro, pour une pile logicielle intégralement open source.
+\end{enumerate}
+
+\subsection{Difficultés rencontrées}
+\begin{itemize}[nosep]
+    \item Réglage de la direction : le jeu mécanique a imposé une compensation logicielle,
+    \item Dialogue RS485 : le recours à une passerelle Arduino s’est avéré plus robuste qu’un Modbus direct sur le Pi,
+    \item Netteté initiale des photos : l’application d’un filtre laplacien a multiplié la variance par 35,
+    \item Gestion des quotas d’API : une stratégie de repli automatique a dû être mise en place,
+    \item Alignement des données capteur avec les formules pédotransfert,
+    \item Coordination de l’équipe sur le développement simultané de 14 modules.
+\end{itemize}
+
+\subsection{Pistes d’évolution}
+
+\subsubsection{Court terme (1--3 mois)}
+\begin{itemize}[nosep]
+    \item Conduire une mission réelle sur un sol naturel,
+    \item Implémenter l’évitement VFH+,
+    \item Déployer un modèle ONNX léger pour l’inférence ML locale sur le Raspberry Pi,
+    \item Mettre en place une base SQLite pour conserver l’historique des missions,
+    \item Ajouter une authentification au dashboard.
+\end{itemize}
+
+\subsubsection{Moyen terme (3--12 mois)}
+\begin{itemize}[nosep]
+    \item Intégrer un module GPS pour un géoréférencement absolu,
+    \item Ré‑entraîner les modèles sur des données iSDAsoil + Soils4Africa ($\sim$100k points),
+    \item Porter le référentiel à plus de 100 cultures (Base\_Cultures\_Filtree.xlsx),
+    \item Ajouter un capteur NPK optique direct (RS485),
+    \item Développer une synthèse vocale multilingue (français, langues locales).
+\end{itemize}
+
+\subsubsection{Long terme}
+\begin{itemize}[nosep]
+    \item Coordination d’une flottille de robots,
+    \item Mise en place d’une plateforme cloud multi‑exploitations,
+    \item Maintenance prédictive des sols.
+\end{itemize}
+
+\subsection{Acquis pédagogiques}
+Ce projet nous a permis de :
+\begin{itemize}[nosep]
+    \item Mettre en pratique la mécatronique, la robotique et l’intelligence artificielle,
+    \item Maîtriser l’intégration hardware/software sous contraintes réelles,
+    \item Concevoir des systèmes résilients avec des mécanismes de repli multiples,
+    \item Développer un pipeline ML complet, de la donnée brute à la recommandation,
+    \item Saisir les enjeux spécifiques de l’agriculture de précision en Afrique,
+    \item Renforcer nos compétences en travail collaboratif distribué.
+\end{itemize}
+
+\newpage
+
+% ======================================================================
+% RÉFÉRENCES
+% ======================================================================
+\begin{thebibliography}{99}
+
+\bibitem{fao2015} FAO. \textit{Status of the World's Soil Resources}. Rome, 2015.
+
+\bibitem{basso2020} Basso, B. \& Antle, J. \textit{Digital agriculture to design sustainable agricultural systems}. Nature Sustainability, 2020.
+
+\bibitem{mirzakhaninafchi} Mirzakhaninafchi, H. et al. \textit{EC-N models for soil nitrogen estimation}. Sensors 22:6728, 2022. DOI: 10.3390/s22186728.
+
+\bibitem{koumanov} Koumanov, K. et al. \textit{Nitrate-N/EC relationships}. ICID Conference, 2001.
+
+\bibitem{mazur} Mazur, P. et al. \textit{EC vs K correlation in agricultural soils}. Agriculture MDPI 12:60883, 2022.
+
+\bibitem{lundberg} Lundberg, S. \& Lee, S.-I. \textit{A Unified Approach to Interpreting Model Predictions}. NeurIPS, 2017.
+
+\bibitem{isric} ISRIC. \textit{Soils4Africa Field Survey}. Wageningen University, 2022--2024.
+
+\bibitem{isda} iSDA. \textit{iSDAsoil -- Soil Properties at 30m for Africa}. 2021.
+
+\bibitem{vfh} Borenstein, J. \& Koren, Y. \textit{The Vector Field Histogram}. IEEE Trans. Robotics, 1991.
+
+\bibitem{pca9685} NXP Semiconductors. \textit{PCA9685 Datasheet}. 2015.
+
+\bibitem{adeept} Adeept. \textit{PiCar-Pro V2.0 Kit}. 2024.
+
+\bibitem{gemini} Google AI. \textit{Gemini 2.0 Flash}. 2025.
+
+\bibitem{groq} Groq Inc. \textit{Llama 4 Scout}. 2025.
+
+\bibitem{opencv} Bradski, G. \textit{The OpenCV Library}. Dr. Dobb's Journal, 2000.
+
+\bibitem{sklearn} Pedregosa, F. et al. \textit{Scikit-learn: Machine Learning in Python}. JMLR 12, 2011.
+
+\bibitem{xgboost} Chen, T. \& Guestrin, C. \textit{XGBoost: A Scalable Tree Boosting System}. KDD, 2016.
+
+\bibitem{stenon} Stenon GmbH. \textit{FarmLab}. 2024.
+
+\bibitem{agrobot} AGROBOT S.L. \textit{AGROBOT LALA}. 2023.
+
+\end{thebibliography}
+
+\newpage
+
+% ======================================================================
+% ANNEXES
+% ======================================================================
+\section{Annexes}
+
+\subsection{Code source du planificateur (planner.py)}
+\begin{lstlisting}[language=Python, caption=planner.py -- Fonctions principales]
+def normalize_angle(angle_deg):
+    angle = angle_deg % 360.0
+    if angle > 180.0:
+        angle -= 360.0
+    return angle
+
+def calculate_movement(x_a, y_a, x_b, y_b, heading_deg):
+    delta_x = x_b - x_a
+    delta_y = y_b - y_a
+    distance_cm = math.sqrt(delta_x**2 + delta_y**2)
+    target_angle_rad = math.atan2(delta_y, delta_x)
+    target_angle_deg = math.degrees(target_angle_rad)
+    rotation_deg = normalize_angle(target_angle_deg - heading_deg)
+    direction = 'left' if rotation_deg >= 0 else 'right'
+    return {
+        'delta_x': delta_x, 'delta_y': delta_y,
+        'distance_cm': distance_cm,
+        'target_angle_deg': target_angle_deg,
+        'rotation_deg': abs(rotation_deg),
+        'direction': direction
+    }
+\end{lstlisting}
+
+\subsection{Architecture logicielle complète}
+\begin{lstlisting}[language=, caption=Arborescence du projet]
+n/
+  src/
+    main.py              Orchestrateur
+    planner.py           Planification navigation
+    executor.py          Mouvement moteurs + direction
+    arm.py               Bras robotique + probe_cycle
+    sensor_arduino.py    Capteur sol RS485/Modbus
+    camera.py            Capture photo + sharpening
+    camera_video.py      Enregistrement video
+    image_processor.py   Analyse async VLM/OpenCV
+    image_preprocessor.py Traitement local
+    vlm_analyzer.py      API Gemini/Groq
+    reco_engine.py       Pipeline ML complet
+    advisor.py           Assistant conseil personnalise
+    data_logger.py       Aggregation results.json
+    tts_engine.py        Synthese vocale
+    config_loader.py     Configuration centralisee
+    doctor/              Module diagnostic
+      engine.py          Orchestrateur
+      checks.py          12 tests hardware/software
+      healer.py          Correctifs automatiques
+      state.py           Capture etat systeme
+      prompts.py         Prompts pour LLM
+    ml/                  Pipeline ML
+      01_databases/      Base cultures + splits
+      02_models/         Modeles .pkl entrainees
+      03_training/       Scripts entrainement
+      04_figures/        Graphiques generes
+      05_recommendation/ Classement et scoring
+    web/                 Dashboard Flask
+      app.py             Serveur principal
+      static/            JS, CSS, HTML SPA
+        index.html       Interface unique
+        app.js           Logique dashboard
+        chat.js          Module conseil terrain
+        style.css        Styles responsive
+      templates/         Templates Jinja
+  config/                map.json, calibration.json
+  tests/                 14+ tests unitaires
+  data/                  photos/, results.json
+  docs/                  Documentation technique
+  robotique/             Scripts TP robotique
+  arduino/               sensor_code.ino
+\end{lstlisting}
+
+\subsection{Structure du pipeline ML}
+\begin{lstlisting}[language=, caption=Sous-dossiers src/ml/]
+src/ml/
+  01_databases/
+    base_reference_agricole.json   41 cultures FAO
+    dataset_preprocessed.csv       Donnees normalisees
+    splits/                        X_train, X_val, X_test, y
+  02_models/
+    random_forest.pkl              Classifieur
+    xgboost.pkl                    Classifieur XGBoost
+    regressor_N.pkl                Regresseur N
+    regressor_P.pkl                Regresseur P
+    regressor_K.pkl                Regresseur K
+    scaler.pkl                     Normalisation
+    shap_explainer.pkl             Explaineur SHAP
+    label_encoder.pkl              Encodage cultures
+  03_training/
+    model_training.py              Entrainement complet
+    eda_preprocessing.py           Analyse + normalisation
+    explain.py + explainability.py SHAP + feature importance
+    xai_simple.py                  Explicabilite simplifiee
+  04_figures/
+    boxplots_par_culture.png       Analyse exploratoire
+    confusion_matrix.png           Performance classifieur
+    heatmap_correlation.png        Correlations N, P, K
+    feature_importance.png         Importance des parametres
+    shap_impact_simple.png         Impact SHAP global
+    regression_N.png, P.png, K.png Performance regression
+  05_recommendation/
+    recommendation.py              Scoring cultures
+    recommendation_ranking.py      Classement + filtres
+\end{lstlisting}
+
+\subsection{Dépendances Python}
+\begin{lstlisting}[language=, caption=requirements.txt]
+Adafruit_PCA9685    # PWM servos/moteurs
+pyserial            # Communication serie Arduino
+opencv-python       # Capture photo + analyse + sharpening
+flask               # Dashboard web
+picamera2           # Fallback camera CSI
+scikit-learn        # Random Forest, scalers
+xgboost             # XGBoost classifieur
+pandas              # Manipulation donnees
+numpy               # Calculs numeriques
+shap                # Explicabilite SHAP
+matplotlib          # Generation figures
+openpyxl            # Lecture XLSX
+gtts                # Synthese vocale
+requests            # Appels API VLM
+\end{lstlisting}
+
+\subsection{Allocation complète des canaux PCA9685}
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|l|c|}
+\hline
+\textbf{Canal} & \textbf{Composant} & \textbf{Fonction} & \textbf{Plage PWM} \\
+\hline
+CH0 & Servo direction & Braquage roues avant & 40\degree--160\degree \\
+CH1 & Servo base & Rotation horizontale bras & 200--460 \\
+CH2 & Servo épaule & Élévation bras & 200--450 \\
+CH3 & Servo coude & Articulation bras & 250--450 \\
+CH4 & Capteur sol & Support sonde & 200--400 \\
+CH12 & Moteur 2 IN2 & Roue droite, entrée 2 & 0--4095 \\
+CH13 & Moteur 2 IN1 & Roue droite, entrée 1 & 0--4095 \\
+CH14 & Moteur 1 IN2 & Roue gauche, entrée 2 & 0--4095 \\
+CH15 & Moteur 1 IN1 & Roue gauche, entrée 1 & 0--4095 \\
+\hline
+\end{tabular}
+\caption{Allocation PCA9685 (adresse I2C 0x5F, 50 Hz)}
+\end{table}
+
+\end{document}

@@ -1,0 +1,2811 @@
+{
+  "metadata": {
+    "titre": "Base de reference sol/cultures pour robot agricole",
+    "version": "2.0.0",
+    "date": "2026-06-18",
+    "cultures_count": 41,
+    "mesures_robot": [
+      "EC",
+      "pH",
+      "humidite",
+      "temperature"
+    ],
+    "parametres_estimes_ML": [
+      "N",
+      "P",
+      "K",
+      "MO"
+    ],
+    "sources": [
+      "FAO ECOCROP (pH, T, precip)",
+      "IITA/INRAB/AfricaRice/CIRAD/IFDC (NPK)",
+      "iSDA Africa (echantillons sol reels)",
+      "Kaggle Crop Recommendation Dataset",
+      "Nature Crop Suitability Africa (Figshare)"
+    ],
+    "notation": "P2O5 et K2O = formes oxydes (standard engrais). Conversion: P=P2O5/2.29, K=K2O/1.205"
+  },
+  "cultures": [
+    {
+      "culture": "Arachide",
+      "nom_scientifique": "Arachis hypogaea",
+      "zone": "Afrique",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "N2Africa",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 5.5,
+          "max": 6.5,
+          "optimal": 6.0,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 22,
+          "max": 32,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 600,
+          "max": 1500,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 20,
+          "max": 25,
+          "optimal": 22,
+          "unite": "kg/ha",
+          "source": "N2Africa"
+        },
+        "P2O5": {
+          "min": 20,
+          "max": 60,
+          "optimal": 40,
+          "unite": "kg/ha",
+          "source": "N2Africa",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 25,
+          "max": 60,
+          "optimal": 42,
+          "unite": "kg/ha",
+          "source": "N2Africa",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "min": 40.0,
+          "max": 65.0,
+          "optimal": 52.5,
+          "unite": "%",
+          "source": "Kaggle Crop Recommendation (contexte Inde)",
+          "note": "Donnees indicatives du contexte indien. A adapter pour l Afrique."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards pour l Afrique.",
+      "fertilisation": {
+        "NPK_recommandation": "20-25 N, 20-60 P2O5, 25-60 K2O kg/ha",
+        "source": "N2Africa"
+      }
+    },
+    {
+      "culture": "Banane plantain",
+      "nom_scientifique": "Musa spp.",
+      "zone": "Afrique",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "IITA Propas",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 5,
+          "max": 7.5,
+          "optimal": 6.2,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 20,
+          "max": 35,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 1200,
+          "max": 4000,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 200,
+          "max": 400,
+          "optimal": 300,
+          "unite": "kg/ha",
+          "source": "IITA Propas"
+        },
+        "P2O5": {
+          "min": 40,
+          "max": 60,
+          "optimal": 50,
+          "unite": "kg/ha",
+          "source": "IITA Propas",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 200,
+          "max": 600,
+          "optimal": 400,
+          "unite": "kg/ha",
+          "source": "IITA Propas",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "min": 75.0,
+          "max": 85.0,
+          "optimal": 80.0,
+          "unite": "%",
+          "source": "Kaggle Crop Recommendation (contexte Inde)",
+          "note": "Donnees indicatives du contexte indien. A adapter pour l Afrique."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards pour l Afrique.",
+      "fertilisation": {
+        "NPK_recommandation": "200-400 N, 40-60 P2O5, 200-600 K2O kg/ha",
+        "source": "IITA Propas"
+      }
+    },
+    {
+      "culture": "Cacao",
+      "nom_scientifique": "Theobroma cacao",
+      "zone": "Afrique",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "COCOBOD/CNRA",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 5,
+          "max": 6.5,
+          "optimal": 5.8,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 21,
+          "max": 32,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 1200,
+          "max": 3000,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 60,
+          "max": 120,
+          "optimal": 90,
+          "unite": "kg/ha",
+          "source": "COCOBOD/CNRA"
+        },
+        "P2O5": {
+          "min": 20,
+          "max": 30,
+          "optimal": 25,
+          "unite": "kg/ha",
+          "source": "COCOBOD/CNRA",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 50,
+          "max": 100,
+          "optimal": 75,
+          "unite": "kg/ha",
+          "source": "COCOBOD/CNRA",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards pour l Afrique.",
+      "fertilisation": {
+        "NPK_recommandation": "60-120 N, 20-30 P2O5, 50-100 K2O kg/ha",
+        "source": "COCOBOD/CNRA"
+      }
+    },
+    {
+      "culture": "Cafe",
+      "nom_scientifique": "Coffea arabica",
+      "zone": "Afrique",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "ICO/CNRA",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 5.5,
+          "max": 7,
+          "optimal": 6.2,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 14,
+          "max": 28,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 1400,
+          "max": 2300,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 150,
+          "max": 250,
+          "optimal": 200,
+          "unite": "kg/ha",
+          "source": "ICO/CNRA"
+        },
+        "P2O5": {
+          "min": 30,
+          "max": 90,
+          "optimal": 60,
+          "unite": "kg/ha",
+          "source": "ICO/CNRA",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 120,
+          "max": 250,
+          "optimal": 185,
+          "unite": "kg/ha",
+          "source": "ICO/CNRA",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "min": 50.0,
+          "max": 69.9,
+          "optimal": 60.0,
+          "unite": "%",
+          "source": "Kaggle Crop Recommendation (contexte Inde)",
+          "note": "Donnees indicatives du contexte indien. A adapter pour l Afrique."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards pour l Afrique.",
+      "fertilisation": {
+        "NPK_recommandation": "150-250 N, 30-90 P2O5, 120-250 K2O kg/ha",
+        "source": "ICO/CNRA"
+      }
+    },
+    {
+      "culture": "Coton",
+      "nom_scientifique": "Gossypium hirsutum",
+      "zone": "Afrique",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "IFDC Afrique Ouest",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 5.2,
+          "max": 7.5,
+          "optimal": 6.3,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 22,
+          "max": 36,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 750,
+          "max": 1250,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 60,
+          "max": 150,
+          "optimal": 105,
+          "unite": "kg/ha",
+          "source": "IFDC Afrique Ouest"
+        },
+        "P2O5": {
+          "min": 20,
+          "max": 50,
+          "optimal": 35,
+          "unite": "kg/ha",
+          "source": "IFDC Afrique Ouest",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 30,
+          "max": 100,
+          "optimal": 65,
+          "unite": "kg/ha",
+          "source": "IFDC Afrique Ouest",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "min": 75.0,
+          "max": 84.9,
+          "optimal": 80.0,
+          "unite": "%",
+          "source": "Kaggle Crop Recommendation (contexte Inde)",
+          "note": "Donnees indicatives du contexte indien. A adapter pour l Afrique."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards pour l Afrique.",
+      "fertilisation": {
+        "NPK_recommandation": "60-150 N, 20-50 P2O5, 30-100 K2O kg/ha",
+        "source": "IFDC Afrique Ouest"
+      }
+    },
+    {
+      "culture": "Fonio",
+      "nom_scientifique": "Digitaria exilis",
+      "zone": "Afrique",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "NARI Gambie",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 5.5,
+          "max": 6.5,
+          "optimal": 6.0,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 22,
+          "max": 27,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 900,
+          "max": 1600,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 10,
+          "max": 30,
+          "optimal": 20,
+          "unite": "kg/ha",
+          "source": "NARI Gambie"
+        },
+        "P2O5": {
+          "min": 10,
+          "max": 20,
+          "optimal": 15,
+          "unite": "kg/ha",
+          "source": "NARI Gambie",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 0,
+          "max": 20,
+          "optimal": 10,
+          "unite": "kg/ha",
+          "source": "NARI Gambie",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards pour l Afrique.",
+      "fertilisation": {
+        "NPK_recommandation": "10-30 N, 10-20 P2O5, 0-20 K2O kg/ha",
+        "source": "NARI Gambie"
+      }
+    },
+    {
+      "culture": "Haricot",
+      "nom_scientifique": "Phaseolus vulgaris",
+      "zone": "Afrique",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "Fertilizer Institute 4R",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 5.5,
+          "max": 7.5,
+          "optimal": 6.5,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 16,
+          "max": 25,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 500,
+          "max": 2000,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 30,
+          "max": 60,
+          "optimal": 45,
+          "unite": "kg/ha",
+          "source": "Fertilizer Institute 4R"
+        },
+        "P2O5": {
+          "min": 40,
+          "max": 60,
+          "optimal": 50,
+          "unite": "kg/ha",
+          "source": "Fertilizer Institute 4R",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 20,
+          "max": 40,
+          "optimal": 30,
+          "unite": "kg/ha",
+          "source": "Fertilizer Institute 4R",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "min": 18.1,
+          "max": 25.0,
+          "optimal": 21.6,
+          "unite": "%",
+          "source": "Kaggle Crop Recommendation (contexte Inde)",
+          "note": "Donnees indicatives du contexte indien. A adapter pour l Afrique."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards pour l Afrique.",
+      "fertilisation": {
+        "NPK_recommandation": "30-60 N, 40-60 P2O5, 20-40 K2O kg/ha",
+        "source": "Fertilizer Institute 4R"
+      }
+    },
+    {
+      "culture": "Igname",
+      "nom_scientifique": "Dioscorea spp.",
+      "zone": "Afrique",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "IITA Cote d'Ivoire",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 5.5,
+          "max": 6.7,
+          "optimal": 6.1,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 18,
+          "max": 32,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 800,
+          "max": 4000,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 30,
+          "max": 160,
+          "optimal": 95,
+          "unite": "kg/ha",
+          "source": "IITA Cote d'Ivoire"
+        },
+        "P2O5": {
+          "min": 10,
+          "max": 60,
+          "optimal": 35,
+          "unite": "kg/ha",
+          "source": "IITA Cote d'Ivoire",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 40,
+          "max": 180,
+          "optimal": 110,
+          "unite": "kg/ha",
+          "source": "IITA Cote d'Ivoire",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards pour l Afrique.",
+      "fertilisation": {
+        "NPK_recommandation": "30-160 N, 10-60 P2O5, 40-180 K2O kg/ha",
+        "source": "IITA Cote d'Ivoire"
+      }
+    },
+    {
+      "culture": "Mais",
+      "nom_scientifique": "Zea mays",
+      "zone": "Afrique",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "IITA/INRAB Benin",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 5,
+          "max": 7,
+          "optimal": 6.0,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 16,
+          "max": 33,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 600,
+          "max": 1500,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 80,
+          "max": 120,
+          "optimal": 100,
+          "unite": "kg/ha",
+          "source": "IITA/INRAB Benin"
+        },
+        "P2O5": {
+          "min": 30,
+          "max": 60,
+          "optimal": 45,
+          "unite": "kg/ha",
+          "source": "IITA/INRAB Benin",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 25,
+          "max": 60,
+          "optimal": 42,
+          "unite": "kg/ha",
+          "source": "IITA/INRAB Benin",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "min": 55.3,
+          "max": 74.8,
+          "optimal": 65.0,
+          "unite": "%",
+          "source": "Kaggle Crop Recommendation (contexte Inde)",
+          "note": "Donnees indicatives du contexte indien. A adapter pour l Afrique."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards pour l Afrique.",
+      "fertilisation": {
+        "NPK_recommandation": "80-120 N, 30-60 P2O5, 25-60 K2O kg/ha",
+        "source": "IITA/INRAB Benin"
+      }
+    },
+    {
+      "culture": "Manioc",
+      "nom_scientifique": "Manihot esculenta",
+      "zone": "Afrique",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "IITA/IRAD Cameroun",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 5.5,
+          "max": 8,
+          "optimal": 6.8,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 20,
+          "max": 29,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 1000,
+          "max": 1500,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 48,
+          "max": 160,
+          "optimal": 104,
+          "unite": "kg/ha",
+          "source": "IITA/IRAD Cameroun"
+        },
+        "P2O5": {
+          "min": 10,
+          "max": 80,
+          "optimal": 45,
+          "unite": "kg/ha",
+          "source": "IITA/IRAD Cameroun",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 50,
+          "max": 160,
+          "optimal": 105,
+          "unite": "kg/ha",
+          "source": "IITA/IRAD Cameroun",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards pour l Afrique.",
+      "fertilisation": {
+        "NPK_recommandation": "48-160 N, 10-80 P2O5, 50-160 K2O kg/ha",
+        "source": "IITA/IRAD Cameroun"
+      }
+    },
+    {
+      "culture": "Mil",
+      "nom_scientifique": "Pennisetum glaucum",
+      "zone": "Afrique",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "INRAN Niger",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 5,
+          "max": 6.5,
+          "optimal": 5.8,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 25,
+          "max": 35,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 400,
+          "max": 900,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 30,
+          "max": 60,
+          "optimal": 45,
+          "unite": "kg/ha",
+          "source": "INRAN Niger"
+        },
+        "P2O5": {
+          "min": 15,
+          "max": 30,
+          "optimal": 22,
+          "unite": "kg/ha",
+          "source": "INRAN Niger",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 15,
+          "max": 30,
+          "optimal": 22,
+          "unite": "kg/ha",
+          "source": "INRAN Niger",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards pour l Afrique.",
+      "fertilisation": {
+        "NPK_recommandation": "30-60 N, 15-30 P2O5, 15-30 K2O kg/ha",
+        "source": "INRAN Niger"
+      }
+    },
+    {
+      "culture": "Niebe",
+      "nom_scientifique": "Vigna unguiculata",
+      "zone": "Afrique",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "IITA Ghana",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 5.5,
+          "max": 7.5,
+          "optimal": 6.5,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 20,
+          "max": 35,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 500,
+          "max": 2000,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 20,
+          "max": 30,
+          "optimal": 25,
+          "unite": "kg/ha",
+          "source": "IITA Ghana"
+        },
+        "P2O5": {
+          "min": 30,
+          "max": 45,
+          "optimal": 38,
+          "unite": "kg/ha",
+          "source": "IITA Ghana",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 20,
+          "max": 30,
+          "optimal": 25,
+          "unite": "kg/ha",
+          "source": "IITA Ghana",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "min": 80.0,
+          "max": 90.0,
+          "optimal": 85.0,
+          "unite": "%",
+          "source": "Kaggle Crop Recommendation (contexte Inde)",
+          "note": "Donnees indicatives du contexte indien. A adapter pour l Afrique."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards pour l Afrique.",
+      "fertilisation": {
+        "NPK_recommandation": "20-30 N, 30-45 P2O5, 20-30 K2O kg/ha",
+        "source": "IITA Ghana"
+      }
+    },
+    {
+      "culture": "Patate douce",
+      "nom_scientifique": "Ipomoea batatas",
+      "zone": "Afrique",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "CSIR Ghana",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 5,
+          "max": 7,
+          "optimal": 6.0,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 18,
+          "max": 28,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 750,
+          "max": 2000,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 60,
+          "max": 120,
+          "optimal": 90,
+          "unite": "kg/ha",
+          "source": "CSIR Ghana"
+        },
+        "P2O5": {
+          "min": 30,
+          "max": 130,
+          "optimal": 80,
+          "unite": "kg/ha",
+          "source": "CSIR Ghana",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 120,
+          "max": 200,
+          "optimal": 160,
+          "unite": "kg/ha",
+          "source": "CSIR Ghana",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards pour l Afrique.",
+      "fertilisation": {
+        "NPK_recommandation": "60-120 N, 30-130 P2O5, 120-200 K2O kg/ha",
+        "source": "CSIR Ghana"
+      }
+    },
+    {
+      "culture": "Riz",
+      "nom_scientifique": "Oryza sativa",
+      "zone": "Afrique",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "AfricaRice/FAO",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 5,
+          "max": 8,
+          "optimal": 6.5,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 20,
+          "max": 35,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 1500,
+          "max": 2000,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 60,
+          "max": 120,
+          "optimal": 90,
+          "unite": "kg/ha",
+          "source": "AfricaRice/FAO"
+        },
+        "P2O5": {
+          "min": 30,
+          "max": 60,
+          "optimal": 45,
+          "unite": "kg/ha",
+          "source": "AfricaRice/FAO",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 30,
+          "max": 60,
+          "optimal": 45,
+          "unite": "kg/ha",
+          "source": "AfricaRice/FAO",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "min": 80.1,
+          "max": 85.3,
+          "optimal": 82.7,
+          "unite": "%",
+          "source": "Kaggle Crop Recommendation (contexte Inde)",
+          "note": "Donnees indicatives du contexte indien. A adapter pour l Afrique."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards pour l Afrique.",
+      "fertilisation": {
+        "NPK_recommandation": "60-120 N, 30-60 P2O5, 30-60 K2O kg/ha",
+        "source": "AfricaRice/FAO"
+      }
+    },
+    {
+      "culture": "Sesame",
+      "nom_scientifique": "Sesamum indicum",
+      "zone": "Afrique",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "Indorama/Ethiopie",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 5.5,
+          "max": 7.5,
+          "optimal": 6.5,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 20,
+          "max": 30,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 500,
+          "max": 1000,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 40,
+          "max": 64,
+          "optimal": 52,
+          "unite": "kg/ha",
+          "source": "Indorama/Ethiopie"
+        },
+        "P2O5": {
+          "min": 23,
+          "max": 60,
+          "optimal": 42,
+          "unite": "kg/ha",
+          "source": "Indorama/Ethiopie",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 20,
+          "max": 40,
+          "optimal": 30,
+          "unite": "kg/ha",
+          "source": "Indorama/Ethiopie",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards pour l Afrique.",
+      "fertilisation": {
+        "NPK_recommandation": "40-64 N, 23-60 P2O5, 20-40 K2O kg/ha",
+        "source": "Indorama/Ethiopie"
+      }
+    },
+    {
+      "culture": "Sorgho",
+      "nom_scientifique": "Sorghum bicolor",
+      "zone": "Afrique",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "Yara Kenya/IITA",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 5.5,
+          "max": 7.5,
+          "optimal": 6.5,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 22,
+          "max": 35,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 400,
+          "max": 1000,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 60,
+          "max": 150,
+          "optimal": 105,
+          "unite": "kg/ha",
+          "source": "Yara Kenya/IITA"
+        },
+        "P2O5": {
+          "min": 20,
+          "max": 60,
+          "optimal": 40,
+          "unite": "kg/ha",
+          "source": "Yara Kenya/IITA",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 20,
+          "max": 50,
+          "optimal": 35,
+          "unite": "kg/ha",
+          "source": "Yara Kenya/IITA",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards pour l Afrique.",
+      "fertilisation": {
+        "NPK_recommandation": "60-150 N, 20-60 P2O5, 20-50 K2O kg/ha",
+        "source": "Yara Kenya/IITA"
+      }
+    },
+    {
+      "culture": "Soja",
+      "nom_scientifique": "Glycine max",
+      "zone": "Monde",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset",
+        "NPK": "Kaggle Crop Recommendation / FAO ECOCROP"
+      },
+      "sol": {
+        "pH": {
+          "min": 5.99,
+          "max": 8.87,
+          "optimal": 7.43,
+          "source": "Kaggle CropRec",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 17,
+          "max": 21,
+          "unite": "C",
+          "source": "Kaggle CropRec"
+        },
+        "precipitation": {
+          "min": 65,
+          "max": 96,
+          "unite": "mm/an",
+          "source": "Kaggle CropRec"
+        },
+        "N": {
+          "min": 20,
+          "max": 60,
+          "optimal": 40,
+          "unite": "kg/ha",
+          "source": "Kaggle CropRec"
+        },
+        "P2O5": {
+          "min": 126,
+          "max": 183,
+          "optimal": 155,
+          "unite": "kg/ha",
+          "source": "Kaggle CropRec (converti de P elemental)",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 90,
+          "max": 102,
+          "optimal": 96,
+          "unite": "kg/ha",
+          "source": "Kaggle CropRec (converti de K elemental)",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards.",
+      "fertilisation": {
+        "NPK_recommandation": "20-60 N, 126-183 P2O5, 90-102 K2O kg/ha",
+        "source": "Kaggle CropRec / FAO ECOCROP"
+      }
+    },
+    {
+      "culture": "Pomme",
+      "nom_scientifique": "Malus domestica",
+      "zone": "Monde",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset",
+        "NPK": "Kaggle Crop Recommendation / FAO ECOCROP"
+      },
+      "sol": {
+        "pH": {
+          "min": 5.51,
+          "max": 6.5,
+          "optimal": 6.0,
+          "source": "Kaggle CropRec",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 21,
+          "max": 24,
+          "unite": "C",
+          "source": "Kaggle CropRec"
+        },
+        "precipitation": {
+          "min": 100,
+          "max": 125,
+          "unite": "mm/an",
+          "source": "Kaggle CropRec"
+        },
+        "N": {
+          "min": 0,
+          "max": 40,
+          "optimal": 20,
+          "unite": "kg/ha",
+          "source": "Kaggle CropRec"
+        },
+        "P2O5": {
+          "min": 275,
+          "max": 332,
+          "optimal": 304,
+          "unite": "kg/ha",
+          "source": "Kaggle CropRec (converti de P elemental)",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 235,
+          "max": 247,
+          "optimal": 241,
+          "unite": "kg/ha",
+          "source": "Kaggle CropRec (converti de K elemental)",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "min": 90.0,
+          "max": 95.0,
+          "optimal": 92.5,
+          "unite": "%",
+          "source": "Kaggle Crop Recommendation (contexte Inde)",
+          "note": "Donnees indicatives du contexte indien. A adapter pour l Afrique."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards.",
+      "fertilisation": {
+        "NPK_recommandation": "0-40 N, 275-332 P2O5, 235-247 K2O kg/ha",
+        "source": "Kaggle CropRec / FAO ECOCROP"
+      }
+    },
+    {
+      "culture": "Raisin",
+      "nom_scientifique": "Vitis vinifera",
+      "zone": "Monde",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset",
+        "NPK": "Kaggle Crop Recommendation / FAO ECOCROP"
+      },
+      "sol": {
+        "pH": {
+          "min": 5.51,
+          "max": 6.5,
+          "optimal": 6.0,
+          "source": "Kaggle CropRec",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 8.8,
+          "max": 42,
+          "unite": "C",
+          "source": "Kaggle CropRec"
+        },
+        "precipitation": {
+          "min": 65,
+          "max": 75,
+          "unite": "mm/an",
+          "source": "Kaggle CropRec"
+        },
+        "N": {
+          "min": 0,
+          "max": 40,
+          "optimal": 20,
+          "unite": "kg/ha",
+          "source": "Kaggle CropRec"
+        },
+        "P2O5": {
+          "min": 275,
+          "max": 332,
+          "optimal": 304,
+          "unite": "kg/ha",
+          "source": "Kaggle CropRec (converti de P elemental)",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 235,
+          "max": 247,
+          "optimal": 241,
+          "unite": "kg/ha",
+          "source": "Kaggle CropRec (converti de K elemental)",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "min": 80.0,
+          "max": 84.0,
+          "optimal": 82.0,
+          "unite": "%",
+          "source": "Kaggle Crop Recommendation (contexte Inde)",
+          "note": "Donnees indicatives du contexte indien. A adapter pour l Afrique."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards.",
+      "fertilisation": {
+        "NPK_recommandation": "0-40 N, 275-332 P2O5, 235-247 K2O kg/ha",
+        "source": "Kaggle CropRec / FAO ECOCROP"
+      }
+    },
+    {
+      "culture": "Mangue",
+      "nom_scientifique": "Mangifera indica",
+      "zone": "Monde",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset",
+        "NPK": "Kaggle Crop Recommendation / FAO ECOCROP"
+      },
+      "sol": {
+        "pH": {
+          "min": 4.51,
+          "max": 6.97,
+          "optimal": 5.74,
+          "source": "Kaggle CropRec",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 27,
+          "max": 36,
+          "unite": "C",
+          "source": "Kaggle CropRec"
+        },
+        "precipitation": {
+          "min": 89,
+          "max": 101,
+          "unite": "mm/an",
+          "source": "Kaggle CropRec"
+        },
+        "N": {
+          "min": 0,
+          "max": 40,
+          "optimal": 20,
+          "unite": "kg/ha",
+          "source": "Kaggle CropRec"
+        },
+        "P2O5": {
+          "min": 34,
+          "max": 92,
+          "optimal": 63,
+          "unite": "kg/ha",
+          "source": "Kaggle CropRec (converti de P elemental)",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 30,
+          "max": 42,
+          "optimal": 36,
+          "unite": "kg/ha",
+          "source": "Kaggle CropRec (converti de K elemental)",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "min": 45.0,
+          "max": 55.0,
+          "optimal": 50.0,
+          "unite": "%",
+          "source": "Kaggle Crop Recommendation (contexte Inde)",
+          "note": "Donnees indicatives du contexte indien. A adapter pour l Afrique."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards.",
+      "fertilisation": {
+        "NPK_recommandation": "0-40 N, 34-92 P2O5, 30-42 K2O kg/ha",
+        "source": "Kaggle CropRec / FAO ECOCROP"
+      }
+    },
+    {
+      "culture": "Orange",
+      "nom_scientifique": "Citrus sinensis",
+      "zone": "Monde",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset",
+        "NPK": "Kaggle Crop Recommendation / FAO ECOCROP"
+      },
+      "sol": {
+        "pH": {
+          "min": 6.01,
+          "max": 8.0,
+          "optimal": 7.0,
+          "source": "Kaggle CropRec",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 10,
+          "max": 35,
+          "unite": "C",
+          "source": "Kaggle CropRec"
+        },
+        "precipitation": {
+          "min": 100,
+          "max": 120,
+          "unite": "mm/an",
+          "source": "Kaggle CropRec"
+        },
+        "N": {
+          "min": 0,
+          "max": 40,
+          "optimal": 20,
+          "unite": "kg/ha",
+          "source": "Kaggle CropRec"
+        },
+        "P2O5": {
+          "min": 11,
+          "max": 69,
+          "optimal": 40,
+          "unite": "kg/ha",
+          "source": "Kaggle CropRec (converti de P elemental)",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 6,
+          "max": 18,
+          "optimal": 12,
+          "unite": "kg/ha",
+          "source": "Kaggle CropRec (converti de K elemental)",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "min": 90.0,
+          "max": 95.0,
+          "optimal": 92.5,
+          "unite": "%",
+          "source": "Kaggle Crop Recommendation (contexte Inde)",
+          "note": "Donnees indicatives du contexte indien. A adapter pour l Afrique."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards.",
+      "fertilisation": {
+        "NPK_recommandation": "0-40 N, 11-69 P2O5, 6-18 K2O kg/ha",
+        "source": "Kaggle CropRec / FAO ECOCROP"
+      }
+    },
+    {
+      "culture": "Pois",
+      "nom_scientifique": "Pisum sativum",
+      "zone": "Monde",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset",
+        "NPK": "Kaggle Crop Recommendation / FAO ECOCROP"
+      },
+      "sol": {
+        "pH": {
+          "min": 4.55,
+          "max": 7.45,
+          "optimal": 6.0,
+          "source": "Kaggle CropRec",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 18,
+          "max": 37,
+          "unite": "C",
+          "source": "Kaggle CropRec"
+        },
+        "precipitation": {
+          "min": 90,
+          "max": 199,
+          "unite": "mm/an",
+          "source": "Kaggle CropRec"
+        },
+        "N": {
+          "min": 0,
+          "max": 40,
+          "optimal": 20,
+          "unite": "kg/ha",
+          "source": "Kaggle CropRec"
+        },
+        "P2O5": {
+          "min": 126,
+          "max": 183,
+          "optimal": 155,
+          "unite": "kg/ha",
+          "source": "Kaggle CropRec (converti de P elemental)",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 18,
+          "max": 30,
+          "optimal": 24,
+          "unite": "kg/ha",
+          "source": "Kaggle CropRec (converti de K elemental)",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "min": 30.0,
+          "max": 70.0,
+          "optimal": 50.0,
+          "unite": "%",
+          "source": "Kaggle Crop Recommendation (contexte Inde)",
+          "note": "Donnees indicatives du contexte indien. A adapter pour l Afrique."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards.",
+      "fertilisation": {
+        "NPK_recommandation": "0-40 N, 126-183 P2O5, 18-30 K2O kg/ha",
+        "source": "Kaggle CropRec / FAO ECOCROP"
+      }
+    },
+    {
+      "culture": "Pasteque",
+      "nom_scientifique": "Citrullus lanatus",
+      "zone": "Monde",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset",
+        "NPK": "Kaggle Crop Recommendation / FAO ECOCROP"
+      },
+      "sol": {
+        "pH": {
+          "min": 6.0,
+          "max": 6.96,
+          "optimal": 6.48,
+          "source": "Kaggle CropRec",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 24,
+          "max": 27,
+          "unite": "C",
+          "source": "Kaggle CropRec"
+        },
+        "precipitation": {
+          "min": 40,
+          "max": 60,
+          "unite": "mm/an",
+          "source": "Kaggle CropRec"
+        },
+        "N": {
+          "min": 80,
+          "max": 120,
+          "optimal": 100,
+          "unite": "kg/ha",
+          "source": "Kaggle CropRec"
+        },
+        "P2O5": {
+          "min": 11,
+          "max": 69,
+          "optimal": 40,
+          "unite": "kg/ha",
+          "source": "Kaggle CropRec (converti de P elemental)",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 54,
+          "max": 66,
+          "optimal": 60,
+          "unite": "kg/ha",
+          "source": "Kaggle CropRec (converti de K elemental)",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "min": 80.0,
+          "max": 90.0,
+          "optimal": 85.0,
+          "unite": "%",
+          "source": "Kaggle Crop Recommendation (contexte Inde)",
+          "note": "Donnees indicatives du contexte indien. A adapter pour l Afrique."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards.",
+      "fertilisation": {
+        "NPK_recommandation": "80-120 N, 11-69 P2O5, 54-66 K2O kg/ha",
+        "source": "Kaggle CropRec / FAO ECOCROP"
+      }
+    },
+    {
+      "culture": "Banane dessert",
+      "nom_scientifique": "Musa acuminata",
+      "zone": "Monde",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset",
+        "NPK": "Kaggle Crop Recommendation / FAO ECOCROP"
+      },
+      "sol": {
+        "pH": {
+          "min": 4.52,
+          "max": 6.49,
+          "optimal": 5.5,
+          "source": "Kaggle CropRec",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 25,
+          "max": 30,
+          "unite": "C",
+          "source": "Kaggle CropRec"
+        },
+        "precipitation": {
+          "min": 90,
+          "max": 120,
+          "unite": "mm/an",
+          "source": "Kaggle CropRec"
+        },
+        "N": {
+          "min": 80,
+          "max": 120,
+          "optimal": 100,
+          "unite": "kg/ha",
+          "source": "Kaggle CropRec"
+        },
+        "P2O5": {
+          "min": 160,
+          "max": 218,
+          "optimal": 189,
+          "unite": "kg/ha",
+          "source": "Kaggle CropRec (converti de P elemental)",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 54,
+          "max": 66,
+          "optimal": 60,
+          "unite": "kg/ha",
+          "source": "Kaggle CropRec (converti de K elemental)",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "min": 75.0,
+          "max": 85.0,
+          "optimal": 80.0,
+          "unite": "%",
+          "source": "Kaggle Crop Recommendation (contexte Inde)",
+          "note": "Donnees indicatives du contexte indien. A adapter pour l Afrique."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards.",
+      "fertilisation": {
+        "NPK_recommandation": "80-120 N, 160-218 P2O5, 54-66 K2O kg/ha",
+        "source": "Kaggle CropRec / FAO ECOCROP"
+      }
+    },
+    {
+      "culture": "Ble",
+      "nom_scientifique": "Triticum aestivum",
+      "zone": "Monde",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "FAO / IFA / Litterature standard",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 6.0,
+          "max": 7.5,
+          "optimal": 6.8,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 15,
+          "max": 24,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 400,
+          "max": 700,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 80,
+          "max": 150,
+          "optimal": 115,
+          "unite": "kg/ha",
+          "source": "FAO / IFA"
+        },
+        "P2O5": {
+          "min": 50,
+          "max": 80,
+          "optimal": 65,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 40,
+          "max": 80,
+          "optimal": 60,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards.",
+      "fertilisation": {
+        "NPK_recommandation": "80-150 N, 50-80 P2O5, 40-80 K2O kg/ha",
+        "source": "FAO / IFA"
+      }
+    },
+    {
+      "culture": "Tomate",
+      "nom_scientifique": "Solanum lycopersicum",
+      "zone": "Monde",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "FAO / IFA / Litterature standard",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 5.5,
+          "max": 6.8,
+          "optimal": 6.2,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 18,
+          "max": 28,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 500,
+          "max": 800,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 100,
+          "max": 180,
+          "optimal": 140,
+          "unite": "kg/ha",
+          "source": "FAO / IFA"
+        },
+        "P2O5": {
+          "min": 60,
+          "max": 100,
+          "optimal": 80,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 150,
+          "max": 250,
+          "optimal": 200,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards.",
+      "fertilisation": {
+        "NPK_recommandation": "100-180 N, 60-100 P2O5, 150-250 K2O kg/ha",
+        "source": "FAO / IFA"
+      }
+    },
+    {
+      "culture": "Oignon",
+      "nom_scientifique": "Allium cepa",
+      "zone": "Monde",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "FAO / IFA / Litterature standard",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 6.0,
+          "max": 6.8,
+          "optimal": 6.4,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 13,
+          "max": 24,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 350,
+          "max": 550,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 60,
+          "max": 120,
+          "optimal": 90,
+          "unite": "kg/ha",
+          "source": "FAO / IFA"
+        },
+        "P2O5": {
+          "min": 40,
+          "max": 80,
+          "optimal": 60,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 80,
+          "max": 150,
+          "optimal": 115,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards.",
+      "fertilisation": {
+        "NPK_recommandation": "60-120 N, 40-80 P2O5, 80-150 K2O kg/ha",
+        "source": "FAO / IFA"
+      }
+    },
+    {
+      "culture": "Carotte",
+      "nom_scientifique": "Daucus carota",
+      "zone": "Monde",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "FAO / IFA / Litterature standard",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 5.5,
+          "max": 6.5,
+          "optimal": 6.0,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 15,
+          "max": 22,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 400,
+          "max": 600,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 60,
+          "max": 100,
+          "optimal": 80,
+          "unite": "kg/ha",
+          "source": "FAO / IFA"
+        },
+        "P2O5": {
+          "min": 50,
+          "max": 80,
+          "optimal": 65,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 100,
+          "max": 180,
+          "optimal": 140,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards.",
+      "fertilisation": {
+        "NPK_recommandation": "60-100 N, 50-80 P2O5, 100-180 K2O kg/ha",
+        "source": "FAO / IFA"
+      }
+    },
+    {
+      "culture": "Chou",
+      "nom_scientifique": "Brassica oleracea",
+      "zone": "Monde",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "FAO / IFA / Litterature standard",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 6.0,
+          "max": 7.0,
+          "optimal": 6.5,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 15,
+          "max": 20,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 500,
+          "max": 700,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 120,
+          "max": 200,
+          "optimal": 160,
+          "unite": "kg/ha",
+          "source": "FAO / IFA"
+        },
+        "P2O5": {
+          "min": 60,
+          "max": 100,
+          "optimal": 80,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 100,
+          "max": 200,
+          "optimal": 150,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards.",
+      "fertilisation": {
+        "NPK_recommandation": "120-200 N, 60-100 P2O5, 100-200 K2O kg/ha",
+        "source": "FAO / IFA"
+      }
+    },
+    {
+      "culture": "Canne a sucre",
+      "nom_scientifique": "Saccharum officinarum",
+      "zone": "Monde",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "FAO / IFA / Litterature standard",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 5.5,
+          "max": 7.5,
+          "optimal": 6.5,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 25,
+          "max": 35,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 1000,
+          "max": 2000,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 150,
+          "max": 300,
+          "optimal": 225,
+          "unite": "kg/ha",
+          "source": "FAO / IFA"
+        },
+        "P2O5": {
+          "min": 60,
+          "max": 120,
+          "optimal": 90,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 120,
+          "max": 250,
+          "optimal": 185,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards.",
+      "fertilisation": {
+        "NPK_recommandation": "150-300 N, 60-120 P2O5, 120-250 K2O kg/ha",
+        "source": "FAO / IFA"
+      }
+    },
+    {
+      "culture": "Palmier a huile",
+      "nom_scientifique": "Elaeis guineensis",
+      "zone": "Afrique",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "INRA / CIRAD / Litterature standard",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 4.5,
+          "max": 6.5,
+          "optimal": 5.5,
+          "source": "FAO ECOCROP / CIRAD",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 24,
+          "max": 30,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 1500,
+          "max": 3000,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 100,
+          "max": 200,
+          "optimal": 150,
+          "unite": "kg/ha",
+          "source": "CIRAD / INRA"
+        },
+        "P2O5": {
+          "min": 50,
+          "max": 100,
+          "optimal": 75,
+          "unite": "kg/ha",
+          "source": "CIRAD / INRA",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 200,
+          "max": 350,
+          "optimal": 275,
+          "unite": "kg/ha",
+          "source": "CIRAD / INRA",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards.",
+      "fertilisation": {
+        "NPK_recommandation": "100-200 N, 50-100 P2O5, 200-350 K2O kg/ha",
+        "source": "CIRAD / INRA"
+      }
+    },
+    {
+      "culture": "Ananas",
+      "nom_scientifique": "Ananas comosus",
+      "zone": "Monde",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "FAO / IFA / Litterature standard",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 4.5,
+          "max": 5.5,
+          "optimal": 5.0,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 22,
+          "max": 30,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 800,
+          "max": 1500,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 100,
+          "max": 200,
+          "optimal": 150,
+          "unite": "kg/ha",
+          "source": "FAO / IFA"
+        },
+        "P2O5": {
+          "min": 40,
+          "max": 80,
+          "optimal": 60,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 150,
+          "max": 300,
+          "optimal": 225,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards.",
+      "fertilisation": {
+        "NPK_recommandation": "100-200 N, 40-80 P2O5, 150-300 K2O kg/ha",
+        "source": "FAO / IFA"
+      }
+    },
+    {
+      "culture": "Papaye",
+      "nom_scientifique": "Carica papaya",
+      "zone": "Monde",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "FAO / IFA / Litterature standard",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 5.5,
+          "max": 7.0,
+          "optimal": 6.2,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 22,
+          "max": 30,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 1000,
+          "max": 2000,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 150,
+          "max": 250,
+          "optimal": 200,
+          "unite": "kg/ha",
+          "source": "FAO / IFA"
+        },
+        "P2O5": {
+          "min": 60,
+          "max": 100,
+          "optimal": 80,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 150,
+          "max": 250,
+          "optimal": 200,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards.",
+      "fertilisation": {
+        "NPK_recommandation": "150-250 N, 60-100 P2O5, 150-250 K2O kg/ha",
+        "source": "FAO / IFA"
+      }
+    },
+    {
+      "culture": "Avocat",
+      "nom_scientifique": "Persea americana",
+      "zone": "Monde",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "FAO / IFA / Litterature standard",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 5.5,
+          "max": 7.0,
+          "optimal": 6.2,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 20,
+          "max": 28,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 800,
+          "max": 1500,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 100,
+          "max": 200,
+          "optimal": 150,
+          "unite": "kg/ha",
+          "source": "FAO / IFA"
+        },
+        "P2O5": {
+          "min": 50,
+          "max": 80,
+          "optimal": 65,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 100,
+          "max": 200,
+          "optimal": 150,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards.",
+      "fertilisation": {
+        "NPK_recommandation": "100-200 N, 50-80 P2O5, 100-200 K2O kg/ha",
+        "source": "FAO / IFA"
+      }
+    },
+    {
+      "culture": "Poivron",
+      "nom_scientifique": "Capsicum annuum",
+      "zone": "Monde",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "FAO / IFA / Litterature standard",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 5.5,
+          "max": 6.8,
+          "optimal": 6.2,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 20,
+          "max": 28,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 500,
+          "max": 800,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 100,
+          "max": 150,
+          "optimal": 125,
+          "unite": "kg/ha",
+          "source": "FAO / IFA"
+        },
+        "P2O5": {
+          "min": 50,
+          "max": 80,
+          "optimal": 65,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 150,
+          "max": 200,
+          "optimal": 175,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards.",
+      "fertilisation": {
+        "NPK_recommandation": "100-150 N, 50-80 P2O5, 150-200 K2O kg/ha",
+        "source": "FAO / IFA"
+      }
+    },
+    {
+      "culture": "Concombre",
+      "nom_scientifique": "Cucumis sativus",
+      "zone": "Monde",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "FAO / IFA / Litterature standard",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 5.5,
+          "max": 7.0,
+          "optimal": 6.2,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 20,
+          "max": 28,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 400,
+          "max": 600,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 80,
+          "max": 120,
+          "optimal": 100,
+          "unite": "kg/ha",
+          "source": "FAO / IFA"
+        },
+        "P2O5": {
+          "min": 50,
+          "max": 80,
+          "optimal": 65,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 100,
+          "max": 150,
+          "optimal": 125,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards.",
+      "fertilisation": {
+        "NPK_recommandation": "80-120 N, 50-80 P2O5, 100-150 K2O kg/ha",
+        "source": "FAO / IFA"
+      }
+    },
+    {
+      "culture": "Aubergine",
+      "nom_scientifique": "Solanum melongena",
+      "zone": "Monde",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "FAO / IFA / Litterature standard",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 5.5,
+          "max": 6.5,
+          "optimal": 6.0,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 22,
+          "max": 30,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 500,
+          "max": 800,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 100,
+          "max": 180,
+          "optimal": 140,
+          "unite": "kg/ha",
+          "source": "FAO / IFA"
+        },
+        "P2O5": {
+          "min": 60,
+          "max": 100,
+          "optimal": 80,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 150,
+          "max": 250,
+          "optimal": 200,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards.",
+      "fertilisation": {
+        "NPK_recommandation": "100-180 N, 60-100 P2O5, 150-250 K2O kg/ha",
+        "source": "FAO / IFA"
+      }
+    },
+    {
+      "culture": "Laitue",
+      "nom_scientifique": "Lactuca sativa",
+      "zone": "Monde",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "FAO / IFA / Litterature standard",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 6.0,
+          "max": 7.0,
+          "optimal": 6.5,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 10,
+          "max": 20,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 300,
+          "max": 500,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 60,
+          "max": 100,
+          "optimal": 80,
+          "unite": "kg/ha",
+          "source": "FAO / IFA"
+        },
+        "P2O5": {
+          "min": 40,
+          "max": 60,
+          "optimal": 50,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 100,
+          "max": 150,
+          "optimal": 125,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards.",
+      "fertilisation": {
+        "NPK_recommandation": "60-100 N, 40-60 P2O5, 100-150 K2O kg/ha",
+        "source": "FAO / IFA"
+      }
+    },
+    {
+      "culture": "Fraise",
+      "nom_scientifique": "Fragaria x ananassa",
+      "zone": "Monde",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "FAO / IFA / Litterature standard",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 5.5,
+          "max": 6.5,
+          "optimal": 6.0,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 15,
+          "max": 22,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 500,
+          "max": 800,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 80,
+          "max": 120,
+          "optimal": 100,
+          "unite": "kg/ha",
+          "source": "FAO / IFA"
+        },
+        "P2O5": {
+          "min": 50,
+          "max": 80,
+          "optimal": 65,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 120,
+          "max": 180,
+          "optimal": 150,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards.",
+      "fertilisation": {
+        "NPK_recommandation": "80-120 N, 50-80 P2O5, 120-180 K2O kg/ha",
+        "source": "FAO / IFA"
+      }
+    },
+    {
+      "culture": "Haricot vert",
+      "nom_scientifique": "Phaseolus vulgaris",
+      "zone": "Monde",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "FAO / IFA / Litterature standard",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 6.0,
+          "max": 7.0,
+          "optimal": 6.5,
+          "source": "FAO ECOCROP",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 18,
+          "max": 25,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 400,
+          "max": 600,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 20,
+          "max": 40,
+          "optimal": 30,
+          "unite": "kg/ha",
+          "source": "FAO / IFA (legumineuse fixatrice)"
+        },
+        "P2O5": {
+          "min": 40,
+          "max": 60,
+          "optimal": 50,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 40,
+          "max": 80,
+          "optimal": 60,
+          "unite": "kg/ha",
+          "source": "FAO / IFA",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards.",
+      "fertilisation": {
+        "NPK_recommandation": "20-40 N, 40-60 P2O5, 40-80 K2O kg/ha (legumineuse fixatrice d N)",
+        "source": "FAO / IFA"
+      }
+    },
+    {
+      "culture": "Gombo",
+      "nom_scientifique": "Abelmoschus esculentus",
+      "zone": "Afrique",
+      "sources": {
+        "FAO_ECOCROP": "https://gaez.fao.org/pages/ecocrop",
+        "NPK": "INRAB / IITA / Litterature standard",
+        "iSDA_Africa": "https://github.com/iSDA-Africa/open-soil-data",
+        "Kaggle_CropRec": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset"
+      },
+      "sol": {
+        "pH": {
+          "min": 6.0,
+          "max": 6.8,
+          "optimal": 6.4,
+          "source": "FAO ECOCROP / INRAB",
+          "unite": "unite pH"
+        },
+        "temperature": {
+          "min": 24,
+          "max": 30,
+          "unite": "C",
+          "source": "FAO ECOCROP"
+        },
+        "precipitation": {
+          "min": 500,
+          "max": 1000,
+          "unite": "mm/an",
+          "source": "FAO ECOCROP"
+        },
+        "N": {
+          "min": 80,
+          "max": 120,
+          "optimal": 100,
+          "unite": "kg/ha",
+          "source": "INRAB / IITA"
+        },
+        "P2O5": {
+          "min": 40,
+          "max": 80,
+          "optimal": 60,
+          "unite": "kg/ha",
+          "source": "INRAB / IITA",
+          "note": "Forme oxyde. P elementaire = P2O5 / 2.29"
+        },
+        "K2O": {
+          "min": 80,
+          "max": 150,
+          "optimal": 115,
+          "unite": "kg/ha",
+          "source": "INRAB / IITA",
+          "note": "Forme oxyde. K elementaire = K2O / 1.205"
+        },
+        "EC": {
+          "note": "Donnees non disponibles dans ECOCROP. iSDA Africa contient EC pour 4.3% des echantillons."
+        },
+        "humidite": {
+          "note": "Donnees non disponibles dans ECOCROP. Le dataset Kaggle CropRec contient l humidite par culture."
+        }
+      },
+      "ecocrop_disclaimer": "Les donnees ECOCROP representent des plages de tolerance, pas des optima absolus. Les donnees NPK sont des recommandations de fertilisation standards.",
+      "fertilisation": {
+        "NPK_recommandation": "80-120 N, 40-80 P2O5, 80-150 K2O kg/ha",
+        "source": "INRAB / IITA"
+      }
+    }
+  ]
+}

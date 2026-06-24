@@ -1,0 +1,8 @@
+{
+  "_comment": "Configuration email pour envoi IP au boot",
+  "smtp_server": "smtp.gmail.com",
+  "smtp_port": 587,
+  "smtp_user": "",
+  "recipient_email": "",
+  "use_tls": true
+}

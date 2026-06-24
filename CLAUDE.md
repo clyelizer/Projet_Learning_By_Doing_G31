@@ -1,14 +1,44 @@
-# CLAUDE.md — Projet Robot 2WD + Bras + Capteur Sol + Vision
+# CLAUDE.md — AgroScan (Robot Agricole)
 
 ## Structure du projet
 
 ```
-src/        ← code source (à déployer sur le Pi)
-config/     ← fichiers de configuration (map.json, calibration.json)
-tests/      ← scripts de test
-tools/      ← outils de diagnostic
-docs/       ← documentation du projet
-data/       ← données générées à l'exécution (photos, results.json)
+src/        ← code source (déployé sur le Pi)
+├── main.py              ← Orchestrateur (plan → mission → VLM → reco → TTS)
+├── planner.py           ← Plan de déplacement
+├── executor.py          ← Mouvement moteurs
+├── arm.py               ← Bras robotique + sonde sol
+├── sensor_arduino.py    ← Capteur sol (pH, EC, T°, humidité)
+├── camera.py            ← Capture photo
+├── camera_video.py      ← Enregistrement vidéo
+├── vlm_analyzer.py      ← Analyse IA des photos (Groq/Gemini)
+├── image_processor.py   ← Traitement asynchrone images
+├── reco_engine.py       ← Pipeline ML recommandations + NPK
+├── tts_engine.py        ← Synthèse vocale multilingue (gTTS + espeak-ng)
+├── data_logger.py       ← Agrégation → JSON
+├── config_loader.py     ← Configuration
+├── web/                 ← Dashboard SPA Flask
+│   └── static/          ← index.html, app.js, style.css
+├── doctor/              ← Robot Doctor (diagnostic + auto-healing)
+│   ├── __init__.py
+│   ├── engine.py        ← Orchestrateur (checks → Qwen → heal)
+│   ├── checks.py        ← 12 tests hardware/software
+│   ├── healer.py        ← Correctifs automatiques
+│   ├── prompts.py       ← Prompts pour Qwen Code
+│   └── state.py         ← Capture état système
+└── ml/                  ← Pipeline ML
+    ├── 01_databases/    ← base_reference_agricole.json (41 cultures)
+    ├── 02_models/       ← Modèles .pkl (RF, XGBoost, régresseurs N/P/K)
+    │   └── best/        ← Meilleurs modèles (sélection automatique)
+    ├── 03_training/     ← Scripts d'entraînement + métriques
+    ├── 04_figures/      ← Visualisations
+    └── 05_recommendation/  ← Algorithme de classement
+
+config/     ← map.json, calibration.json
+tests/      ← tests unitaires + hardware
+data/       ← photos, results.json, audio/
+docs/       ← documentation
+plans/      ← notes de développement
 ```
 
 ## Règles Générales
@@ -81,7 +111,9 @@ data/       ← données générées à l'exécution (photos, results.json)
 | `src/camera.py` | Capture photo uniquement |
 | `src/camera_video.py` | Enregistrement vidéo H264 (module séparé) |
 | `src/image_processor.py` | Traitement images (pipeline asynchrone) |
-| `src/vlm_analyzer.py` | Analyse IA sol (Gemini → Groq fallback) |
+| `src/vlm_analyzer.py` | Analyse IA sol (Groq → Gemini fallback) |
+| `src/reco_engine.py` | Pipeline ML : NPK → classement 41 cultures → impact |
+| `src/tts_engine.py` | Synthèse vocale (gTTS + espeak-ng, 22 langues) |
 | `src/data_logger.py` | Agrégation données mission → JSON |
 | `src/planner.py` | Génération plan de déplacement |
 | `src/main.py` | Orchestration du pipeline complet |

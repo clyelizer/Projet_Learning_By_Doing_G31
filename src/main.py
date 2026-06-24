@@ -139,7 +139,9 @@ def main():
         print("🔍 Mode : DRY-RUN (simulation)")
 
     # 1. Génération du plan
-    print(f"\n[1/3] Génération du plan de déplacement...")
+    print("\n[1/4] Génération du plan de déplacement...")
+    # Lancer le serveur web en arrière-plan avant la mission
+    _launch_dashboard()
     try:
         plan = planner.generate_plan(args.map, args.calib)
     except FileNotFoundError as e:
@@ -149,7 +151,7 @@ def main():
     planner.print_plan(plan)
 
     # 2. Vérification
-    print(f"\n[2/3] {len(plan)} commandes à exécuter")
+    print(f"\n[2/4] {len(plan)} commandes à exécuter")
     
     if args.dry_run:
         print("\n✅ Mode DRY-RUN : aucune commande exécutée")
@@ -159,7 +161,7 @@ def main():
     input("\nAppuyez sur ENTRÉE pour lancer la démonstration...")
 
     # 3. Exécution autonome
-    print("\n[3/3] DÉMARRAGE AUTONOME\n")
+    print("\n[3/4] DÉMARRAGE AUTONOME\n")
 
     for i, command in enumerate(plan, 1):
         print(f"--- Étape {i}/{len(plan)} ---")
@@ -212,6 +214,8 @@ def main():
                     data_logger.log_waypoint(wp_id, image_paths=photo_paths)
                     if photo_paths:
                         image_preprocessor.enqueue(photo_paths, wp_id)
+                    # Libérer la caméra entre les waypoints (évite "No such device")
+                    camera.cleanup()
                 except Exception as e:
                     print(f"[ERROR] Échec capture photo: {e}")
                     data_logger.log_waypoint(wp_id, image_paths=[])
@@ -257,11 +261,11 @@ def main():
             except Exception as e:
                 print(f"     ❌ VLM erreur: {e}")
 
-        # Étape 2 : Recommandations via LLM
+        # Étape 2 : Recommandations via ML
         if sensor:
-            print(f"  📋 Reco wp{wp_id} → Groq Llama 8B")
+            print(f"  📋 Reco wp{wp_id} → pipeline ML")
             try:
-                reco_result = reco_engine.recommend(sensor, vlm_result, language='fr')
+                reco_result = reco_engine.recommend(sensor, language='fr')
                 if 'error' not in reco_result:
                     data_logger.get_logger().attach_reco(wp_id, reco_result)
                     crops = reco_result.get('crops', [])
@@ -298,16 +302,36 @@ def main():
     arm.cleanup()
     camera.cleanup()
 
-    # ── Lancement auto du dashboard ────────────────────────────
-    _launch_dashboard()
+    # ── 4. TTS final : lecture audio sur le robot ──────────────────
+    print("\n[4/4] Lecture audio des recommandations...")
+    try:
+        logger = data_logger.get_logger()
+        summary = logger.get_summary() if logger else {}
+        waypoints = summary.get('waypoints', [])
+        if waypoints:
+            # Synthétiser un résumé global
+            all_text = "Mission terminée. "
+            for wp in waypoints:
+                reco = wp.get('recommendations', {})
+                crops = reco.get('crops', [])
+                if crops:
+                    all_text += f"Zone {wp['waypoint_id']}: {', '.join(crops[:2])}. "
+            if all_text:
+                audio = tts_engine.speak(all_text, engine='auto', lang='fr')
+                if 'error' not in audio:
+                    tts_engine.play_audio(audio['path'])
+                    print(f"     ✅ Audio joué sur le robot ({audio['engine']})")
+    except Exception as e:
+        print(f"     ⚠️ Lecture audio finale: {e}")
 
 
 def _is_flask_running():
     """Vérifie si le dashboard Flask tourne déjà."""
     import subprocess
     try:
+        # Cherche à la fois 'app.py' et 'web/app.py' (selon comment lancé)
         result = subprocess.run(
-            ['pgrep', '-f', 'web/app.py'],
+            ['pgrep', '-f', 'app.py'],
             capture_output=True, text=True
         )
         return result.returncode == 0
@@ -317,6 +341,27 @@ def _is_flask_running():
 
 def _launch_dashboard():
     """Lance le dashboard web s'il n'est pas déjà actif."""
+    import subprocess
+
+    # Toujours calculer et afficher l'IP réseau
+    try:
+        import socket
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        local_ip = s.getsockname()[0]
+        s.close()
+    except Exception:
+        local_ip = '127.0.0.1'
+
+    print()
+    print("=" * 60)
+    print("  🌱 AGROSCAN — Dashboard")
+    print("=" * 60)
+    print(f"  Local    : http://127.0.0.1:5000")
+    print(f"  📡 Réseau  : http://{local_ip}:5000")
+    print("=" * 60)
+    print()
+
     if _is_flask_running():
         print("[MAIN] Dashboard déjà en ligne")
         return
@@ -331,7 +376,6 @@ def _launch_dashboard():
             stderr=subprocess.DEVNULL,
         )
         time.sleep(2)
-        print("[MAIN] Dashboard lancé sur http://0.0.0.0:5000")
     except Exception as e:
         print(f"[MAIN] Échec lancement dashboard: {e}")
 

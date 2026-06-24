@@ -1,39 +1,31 @@
-# TODO — Projet Robot 2WD + Bras + Capteur Sol + Vision
+# TODO — AgroScan
 
-## Documentation
-- [ ] renommer tous les .md avec des noms clairs
-- [ ] reprendre correctement tous les .md (ce sont des brouillons)
-- [ ] ajouter les images au .md présentant le robot
-- [ ] mettre à jour `MD/Planning.md` avec les nouveaux champs waypoint
+## Court terme
 
-## Évitement (VFH+)
-- [ ] décider emplacement : dans MAIN/ ou dossier séparé ?
-- [ ] implémenter le sweep ultrason + VFH+
-- [ ] implémenter la FSM orchestrateur
+- [x] Robot Doctor : diagnostic 12 tests + auto-healing intégré au dashboard
+- [ ] **Tester le Doctor sur le Pi** :
+  - [ ] `i2cdetect -y 1` → PCA9685 0x5f détecté
+  - [ ] Impulsions moteurs OK (sans roues)
+  - [ ] Balayage servo direction OK
+  - [ ] `libcamera-still --list-cameras` → caméra détectée
+  - [ ] Port série Arduino (/dev/ttyACM0) accessible
+  - [ ] 15 modèles .pkl lisibles
+  - [ ] Analyse LLM via Qwen Code (optionnel)
+- [ ] Tester le pipeline complet sur le Pi (vérifier les 4 bugs corrigés)
+- [ ] Vérifier calibration capteurs (pH, EC) sur le terrain
 
-## Base de données
-- [ ] rechercher/choisir la solution DB
-- [ ] intégrer les résultats capteur dans la DB
+## Moyen terme
 
-## Nouvelle Architecture — Implémentation
+- [ ] **Refonte UX agriculteur** : interface trop technique/developeur, pas adaptée à un agriculteur ou non-initié. Revoir le design, les libellés, les explications, le parcours utilisateur pour le rendre accessible au terrain
+- [ ] Ajouter un mode "replay" dans le dashboard (voir l'historique des missions)
+- [ ] Améliorer les graphiques d'impact SHAP dans la page Test analyse
+- [ ] Ajouter l'export PDF des recommandations
+- [ ] Notification push sur WhatsApp à la fin d'une mission
 
-### Phase 1 : Modules de base
-- [ ] Réécrire `MAIN/cam.py` → `MAIN/camera.py` (corriger bugs: import guard, chemin relatif, fallback)
-- [x] Créer `src/sensor_arduino.py` (Arduino + MAX485 bridge, port `/dev/ttyACM0`)
-- [ ] Modifier `MAIN/arm.py` (remplacer pince par fonctions `lower_probe()` / `raise_probe()`)
+## Long terme
 
-### Phase 2 : Pipeline
-- [ ] Simplifier `MAIN/executor.py` (retirer `import arm`, mouvement uniquement)
-- [ ] Étendre `MAIN/planner.py` (nouveaux champs waypoint: `probe`, `photos`)
-- [ ] Créer `MAIN/image_processor.py` (pipeline asynchrone, placeholder modèle IA)
-- [ ] Créer `MAIN/data_logger.py` (agrégation JSON des données mission)
-
-### Phase 3 : Orchestration
-- [ ] Restructurer `MAIN/main.py` (nouveau pipeline: plan → mouvement → probe → photo → log → process)
-- [ ] Étendre `Config/map.json` (champs `probe` et `photos` par waypoint)
-- [ ] Étendre `Config/calibration.json` (constantes caméra, capteur)
-
-### Phase 4 : Tests
-- [ ] Tester chaque module individuellement (`if __name__ == '__main__'`)
-- [ ] Tester le pipeline complet en mode dry-run
-- [ ] Tester avec hardware (Pi + robot)
+- [ ] Implémenter l'évitement d'obstacles (VFH+) avec l'ultrason
+- [ ] Base de données persistante (SQLite/PostgreSQL) pour l'historique
+- [ ] Apprentissage automatique continu (retraining avec les nouvelles données terrain)
+- [ ] Mode multi-robot / flotte
+- [ ] Interface mobile native (iOS/Android)

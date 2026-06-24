@@ -22,8 +22,8 @@ except ImportError:
 # --- CONFIGURATION MATERIELLE ---
 # Moteurs arrière (2 roues motrices indépendantes)
 MOTOR_CHANNELS = {
-    'left_rear':  (15, 14),  # M1 gauche : IN1=CH15, IN2=CH14 (inversé pour cohérence câblage)
-    'right_rear': (12, 13),  # M2 droite : IN1=CH12, IN2=CH13 (inversé pour cohérence câblage)
+    'left_rear':  (14, 15),  # M1 gauche : IN1=CH14, IN2=CH15
+    'right_rear': (13, 12),  # M2 droite : IN1=CH13, IN2=CH12
 }
 
 # Servo de direction sur les roues avant

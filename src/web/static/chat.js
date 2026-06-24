@@ -77,6 +77,52 @@
         return div.innerHTML;
     }
 
+    // ── Mode conseil ────────────────────────────────────────────
+    let conseilMode = false;
+    let conseilMessages = [];
+
+    function startConseil() {
+        conseilMode = true;
+        conseilMessages = [];
+        messagesEl.innerHTML = '';
+        const btn = document.getElementById('btn-conseil-terrain');
+        if (btn) btn.style.display = 'none';
+        addMessage('Parlez-moi de votre terrain. Je vais vous poser quelques questions pour vous recommander les meilleures cultures et engrais adaptés à votre champ.', 'bot');
+        inputEl.focus();
+    }
+
+    async function sendConseil(text) {
+        conseilMessages.push({role: 'user', content: text});
+        addTyping();
+
+        try {
+            const resp = await fetch('/api/chat/conseil', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages: conseilMessages, language: 'fr' }),
+            });
+            const data = await resp.json();
+            removeTyping();
+
+            if (data.error) {
+                addMessage('❌ ' + data.error, 'bot');
+                return;
+            }
+
+            addMessage(data.reply, 'bot');
+            conseilMessages.push({role: 'assistant', content: data.reply});
+
+            if (data.mode === 'done') {
+                conseilMode = false;
+                const btn = document.getElementById('btn-conseil-terrain');
+                if (btn) btn.style.display = 'block';
+            }
+        } catch (e) {
+            removeTyping();
+            addMessage('❌ Erreur de connexion.', 'bot');
+        }
+    }
+
     // ── Send ────────────────────────────────────────────────────
     async function sendMessage() {
         const text = inputEl.value.trim();
@@ -84,6 +130,12 @@
 
         inputEl.value = '';
         addMessage(text, 'user');
+
+        if (conseilMode) {
+            await sendConseil(text);
+            return;
+        }
+
         addTyping();
         isLoading = true;
 
@@ -120,10 +172,22 @@
     });
 
     // ── Message d'accueil ───────────────────────────────────────
-    addMessage(
-        'Bonjour ! Je suis votre assistant agricole. Posez-moi vos questions sur les résultats d\'analyse du sol, les cultures recommandées ou les pratiques agricoles adaptées à votre terrain.',
-        'bot'
-    );
+    function renderWelcome() {
+        messagesEl.innerHTML = '';
+        const div = document.createElement('div');
+        div.className = 'chat-msg chat-msg-bot';
+        div.innerHTML = `
+            <div class="chat-msg-content">
+                Bonjour ! Je suis votre assistant agricole. Posez-moi vos questions sur les résultats d'analyse du sol.
+            </div>
+            <button id="btn-conseil-terrain" class="btn-conseil-terrain">
+                🌱 Discuter des résultats<br><span style="font-size:11px;opacity:0.8">de l'analyse de mon terrain</span>
+            </button>
+        `;
+        messagesEl.appendChild(div);
+        document.getElementById('btn-conseil-terrain')?.addEventListener('click', startConseil);
+    }
+    renderWelcome();
 })();
 
 // ── Global: replay TTS ───────────────────────────────────────────
