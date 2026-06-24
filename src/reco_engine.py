@@ -18,6 +18,7 @@ import io
 import json
 import os
 import sys
+import joblib
 from typing import Optional
 
 import matplotlib
@@ -35,6 +36,108 @@ from recommendation_ranking import (
     rank_cultures as _rank_cultures,
     load_base_reference,
 )
+
+# ── Chemin vers les modeles ML entraines ─────────────────────────
+_BEST_DIR = os.path.join(_ML_DIR, '02_models', 'best')
+
+# ── Cache des modeles (singleton simple) ──────────────────────────
+_ml_models_cache = {}
+
+def _get_ml_model(path):
+    """Charge un modele .pkl avec cache simple."""
+    if path not in _ml_models_cache:
+        if not os.path.exists(path):
+            return None
+        _ml_models_cache[path] = joblib.load(path)
+    return _ml_models_cache[path]
+
+# Valeur par defaut pour EC_approx (median du dataset d'entrainement)
+# Utilisee quand les donnees iSDA ne sont pas disponibles en inference.
+_DEFAULT_EC_APPROX = 0.72  # dS/m
+
+
+def estimer_NPK_ML(pH: float, temperature: float, humidite: float) -> dict:
+    """
+    Estime N, P, K (kg/ha elementaire) via les regresseurs RF entraines.
+    Retourne N_kg/ha, P_mg/kg, K_mg/kg + methodes.
+    Retourne None si les modeles ne sont pas disponibles.
+    """
+    scaler = _get_ml_model(os.path.join(_BEST_DIR, 'scaler_regression_N.pkl'))
+    if scaler is None:
+        return None
+
+    X = np.array([[pH, temperature, humidite]])
+    import pandas as pd
+    _SCALER_REG_COLS = ['pH', 'temperature', 'humidite']
+    X_df = pd.DataFrame(X, columns=_SCALER_REG_COLS)
+    X_scaled = scaler.transform(X_df)
+
+    N_model = _get_ml_model(os.path.join(_BEST_DIR, 'regressor_N.pkl'))
+    P_model = _get_ml_model(os.path.join(_BEST_DIR, 'regressor_P.pkl'))
+    K_model = _get_ml_model(os.path.join(_BEST_DIR, 'regressor_K.pkl'))
+    if N_model is None or P_model is None or K_model is None:
+        return None
+
+    N_kg = max(0, round(float(N_model.predict(X_scaled)[0]), 1))
+    P_kg = max(5, round(float(P_model.predict(X_scaled)[0]), 1))
+    K_kg = max(10, round(float(K_model.predict(X_scaled)[0]), 1))
+
+    return {
+        "N_kg_ha": N_kg, "P_mg_kg": P_kg, "K_mg_kg": K_kg,
+        "methodes": {"N": "RF Regressor", "P": "RF Regressor", "K": "RF Regressor"},
+    }
+
+
+def predire_culture_ML(pH: float, temperature: float, humidite: float,
+                       N: float, P: float, K: float) -> Optional[dict]:
+    """
+    Predire la culture via le classifieur RF.
+    Construit les 13 features attendues (7 raw + 6 engineered).
+    Retourne None si le modele n'est pas disponible.
+    """
+    clf = _get_ml_model(os.path.join(_BEST_DIR, 'classifier.pkl'))
+    scaler = _get_ml_model(os.path.join(_BEST_DIR, 'scaler_classification.pkl'))
+    le = _get_ml_model(os.path.join(_BEST_DIR, 'label_encoder_culture.pkl'))
+    if clf is None or scaler is None or le is None:
+        return None
+
+    ratio_N_P = N / P if P > 0 else 0.0
+    ratio_N_K = N / K if K > 0 else 0.0
+    ratio_P_K = P / K if K > 0 else 0.0
+    max_npk = max(abs(N), abs(P), abs(K), 1e-10)
+    score_balance = 1 - (
+        abs(abs(N) / max_npk - 0.5) +
+        abs(abs(P) / max_npk - 0.3) +
+        abs(abs(K) / max_npk - 0.2)
+    ) / 2
+    EC_approx = _DEFAULT_EC_APPROX
+    pH_times_EC = pH * EC_approx
+
+    feats = np.array([[
+        N, P, K, temperature, humidite, pH, 0.0,
+        ratio_N_P, ratio_N_K, ratio_P_K,
+        score_balance, EC_approx, pH_times_EC,
+    ]])
+    import pandas as pd
+    _SCALER_CLF_COLS = [
+        'N', 'P', 'K', 'temperature', 'humidite', 'pH', 'precipitation',
+        'ratio_N_P', 'ratio_N_K', 'ratio_P_K', 'score_NPK_balance', 'EC_approx', 'pH_times_EC',
+    ]
+    feats_df = pd.DataFrame([feats[0]], columns=_SCALER_CLF_COLS)
+    feats_scaled = scaler.transform(feats_df)
+    pred_idx = clf.predict(feats_scaled)[0]
+    probas = clf.predict_proba(feats_scaled)[0]
+
+    culture = str(le.inverse_transform([pred_idx])[0])
+    top3_idx = np.argsort(probas)[::-1][:3]
+
+    return {
+        "culture": culture,
+        "confiance": round(float(probas[pred_idx]), 4),
+        "top_3": [{"culture": str(le.classes_[i]), "probabilite": round(float(probas[i]), 4)}
+                  for i in top3_idx],
+    }
+
 
 # ── Estimation NPK (formules pedotransfert) ─────────────────────
 
@@ -203,16 +306,37 @@ def recommend(sensor_data: dict, language: str = 'fr',
     humidite = float(sensor_data.get('humidity_pct', 50))
     temperature = float(sensor_data.get('temperature_c', 25))
 
-    # Etape 1: NPK
-    npk = estimer_NPK(EC, pH, humidite, temperature)
+    # Etape 1: NPK — ML en priorite, fallback formules pedotransfert
+    ml_npk = estimer_NPK_ML(pH, temperature, humidite)
+    if ml_npk:
+        npk = {
+            "N_kg_ha": ml_npk["N_kg_ha"],
+            "N_mg_kg": ml_npk["N_kg_ha"] / 2,
+            "P_mg_kg": ml_npk["P_mg_kg"],
+            "K_mg_kg": ml_npk["K_mg_kg"],
+            "P2O5_kg_ha": round(ml_npk["P_mg_kg"] * 2.29, 1),
+            "K2O_kg_ha": round(ml_npk["K_mg_kg"] * 1.205, 1),
+            "methode": "ML",
+        }
+    else:
+        npk = estimer_NPK(EC, pH, humidite, temperature)
+        npk["methode"] = "pedotransfert"
 
-    # Etape 2: classement
+    # Valeurs N, P, K elementaires pour le classifieur ML
+    N_el = npk["N_kg_ha"]
+    P_el = npk["P_mg_kg"]
+    K_el = npk["K_mg_kg"]
+
+    # Etape 2: classement (base reference 41 cultures + scoring ML optionnel)
     mesures_completes = {
         "EC": EC, "pH": pH, "humidite": humidite, "temperature": temperature,
-        "N": npk["N_mg_kg"], "P2O5": npk["P2O5_kg_ha"], "K2O": npk["K2O_kg_ha"],
+        "N": npk["N_kg_ha"], "P2O5": npk["P2O5_kg_ha"], "K2O": npk["K2O_kg_ha"],
     }
     reco = _get_recommendations(mesures_completes)
     ranking = reco.get("ranking", [])
+
+    # Etape 2b: prediction ML de la culture (si modele disponible)
+    ml_culture = predire_culture_ML(pH, temperature, humidite, N_el, P_el, K_el)
 
     # Etape 3: generer impact chart pour chaque culture du top
     classement = []
@@ -244,6 +368,7 @@ def recommend(sensor_data: dict, language: str = 'fr',
         "top_culture": reco.get("top_culture"),
         "top_score": reco.get("top_score"),
         "fertilisation": reco.get("fertilisation"),
+        "ml_culture": ml_culture,
     }
 
     return result

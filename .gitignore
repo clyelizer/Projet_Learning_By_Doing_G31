@@ -40,3 +40,15 @@ data/audio/
 
 # Backups
 backups/
+
+# ML Pipeline artifacts (regenerated at each training run)
+src/ml/02_models/*.pkl
+src/ml/02_models/best/*.pkl
+src/ml/02_models/best/*.txt
+src/ml/03_training/metriques.txt
+src/ml/03_training/splits/
+src/ml/03_training/statistiques_descriptives.txt
+src/ml/03_training/rapport_eda.md
+src/ml/04_figures/*.png
+src/ml/01_databases/dataset_preprocessed.csv
+src/ml/01_databases/splits/

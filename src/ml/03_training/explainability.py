@@ -35,7 +35,9 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings('ignore', category=UserWarning, module='matplotlib')
+warnings.filterwarnings('ignore', category=FutureWarning, module='seaborn')
+warnings.filterwarnings('ignore', category=FutureWarning, module='shap')
 
 # ──────────────────────────────────────────────
 # Chemins

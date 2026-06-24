@@ -36,7 +36,8 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.metrics import (
     accuracy_score, f1_score, confusion_matrix, classification_report,
-    mean_squared_error, mean_absolute_error, r2_score
+    mean_squared_error, mean_absolute_error, r2_score,
+    precision_recall_fscore_support
 )
 import joblib
 
@@ -48,14 +49,14 @@ ML_DIR     = os.path.join(SCRIPT_DIR, '..')
 DATA_DIR   = os.path.join(ML_DIR, '01_databases')
 DATA_PATH  = os.path.join(DATA_DIR, 'dataset_preprocessed.csv')
 MODEL_DIR   = os.path.join(ML_DIR, '02_models')
+SPLITS_DIR  = os.path.join(SCRIPT_DIR, 'splits')
 METRICS_PATH = os.path.join(SCRIPT_DIR, 'metriques.txt')
 FIGURES_DIR  = os.path.join(ML_DIR, '04_figures')
 RANDOM_STATE = 42
-TEST_SIZE = 0.20
-VAL_SIZE = 0.15
 CV_FOLDS = 5
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings('ignore', category=UserWarning, module='matplotlib')
+warnings.filterwarnings('ignore', category=FutureWarning, module='seaborn')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -77,6 +78,34 @@ def load_data(path):
     logger.info(f'Colonnes : {list(df.columns)}')
     logger.info(f'Valeurs manquantes :\n{df.isnull().sum()[df.isnull().sum() > 0].to_dict() or "Aucune"}')
     return df
+
+
+def load_splits(splits_dir=SPLITS_DIR):
+    """
+    Charge les splits pre-calcules (train/val/test) par l'EDA.
+    Ces splits sont creates par eda_preprocessing.py avec stratify.
+    Evite de re-partitionner et garantit que le test set n'est jamais vu
+    pendant l'entrainement ou la selection d'hyperparametres.
+    """
+    logger.info(f'Chargement des splits depuis : {splits_dir}')
+
+    required = ['X_train.csv', 'X_val.csv', 'X_test.csv', 'y_train.csv', 'y_val.csv', 'y_test.csv']
+    for fname in required:
+        fpath = os.path.join(splits_dir, fname)
+        if not os.path.exists(fpath):
+            logger.error(f'Split introuvable : {fpath}')
+            logger.info('Lancez d\'abord eda_preprocessing.py pour generer les splits.')
+            sys.exit(1)
+
+    X_train = pd.read_csv(os.path.join(splits_dir, 'X_train.csv'))
+    X_val   = pd.read_csv(os.path.join(splits_dir, 'X_val.csv'))
+    X_test  = pd.read_csv(os.path.join(splits_dir, 'X_test.csv'))
+    y_train = pd.read_csv(os.path.join(splits_dir, 'y_train.csv'))['culture']
+    y_val   = pd.read_csv(os.path.join(splits_dir, 'y_val.csv'))['culture']
+    y_test  = pd.read_csv(os.path.join(splits_dir, 'y_test.csv'))['culture']
+
+    logger.info(f'Splits charges — train: {len(X_train)}, val: {len(X_val)}, test: {len(X_test)}')
+    return X_train, X_val, X_test, y_train, y_val, y_test
 
 
 # ── 2. Preparation des donnees ─────────────────────────────────────────────
@@ -156,7 +185,7 @@ def prepare_regression_data(df, target_col, feature_cols):
 
 
 # ── 3. Entrainement avec GridSearchCV ──────────────────────────────────────
-def train_classifier(model, param_grid, model_name, X_train, y_train, X_val, y_val):
+def train_classifier(model, param_grid, model_name, X_train, y_train, X_val, y_val, cv_n_jobs=-1):
     """Entraine un classifieur avec GridSearchCV."""
     logger.info(f'=== Entrainement classifieur : {model_name} ===')
 
@@ -166,8 +195,8 @@ def train_classifier(model, param_grid, model_name, X_train, y_train, X_val, y_v
         param_grid=param_grid,
         cv=cv,
         scoring='f1_weighted',
-        n_jobs=-1,
-        verbose=0
+        n_jobs=cv_n_jobs,
+        verbose=0,
     )
 
     grid.fit(X_train, y_train)
@@ -176,17 +205,61 @@ def train_classifier(model, param_grid, model_name, X_train, y_train, X_val, y_v
     logger.info(f'Meilleurs hyperparametres [{model_name}] : {grid.best_params_}')
     logger.info(f'Meilleur score F1 (CV) : {grid.best_score_:.4f}')
 
-    # Validation
     y_pred = best_model.predict(X_val)
     acc = accuracy_score(y_val, y_pred)
-    f1 = f1_score(y_val, y_pred, average='weighted')
+    f1_w = f1_score(y_val, y_pred, average='weighted')
+    f1_m = f1_score(y_val, y_pred, average='macro')
+    prec, rec, f1_per, supp = precision_recall_fscore_support(y_val, y_pred, average=None, zero_division=0)
     logger.info(f'Accuracy (validation) : {acc:.4f}')
-    logger.info(f'F1-score (validation)  : {f1:.4f}')
+    logger.info(f'F1-weight (validation): {f1_w:.4f}')
+    logger.info(f'F1-macro  (validation): {f1_m:.4f}')
 
-    return best_model, y_pred, {'accuracy': acc, 'f1_score': f1, 'best_params': grid.best_params_, 'cv_score': grid.best_score_}
+    return best_model, y_pred, {
+        'accuracy': acc,
+        'f1_score': f1_w,
+        'f1_macro': f1_m,
+        'precision_per_class': prec.tolist(),
+        'recall_per_class': rec.tolist(),
+        'f1_per_class': f1_per.tolist(),
+        'best_params': grid.best_params_,
+        'cv_score': grid.best_score_,
+    }
 
 
-def train_regressor(model, param_grid, model_name, X_train, y_train, X_val, y_val, target_name):
+def evaluate_on_test(model, scaler, le, X_test, y_test, task='classification', target_name=None):
+    """
+    Evaluation finale sur le test set (jamais vu pendant l'entrainement).
+    Retourne un dict de metriques.
+    """
+    num_cols = X_test.select_dtypes(include=[np.number]).columns
+    X_test_scaled = scaler.transform(X_test[num_cols])
+
+    if task == 'classification':
+        y_pred = model.predict(X_test_scaled)
+        acc = accuracy_score(y_test, y_pred)
+        f1_w = f1_score(y_test, y_pred, average='weighted')
+        f1_m = f1_score(y_test, y_pred, average='macro')
+        report = classification_report(y_test, y_pred, target_names=le.classes_, zero_division=0)
+        logger.info(f'=== Evaluation TEST [{target_name or "clf"}] ===')
+        logger.info(f'Accuracy  : {acc:.4f}')
+        logger.info(f'F1-weight : {f1_w:.4f}')
+        logger.info(f'F1-macro  : {f1_m:.4f}')
+        logger.info(f'\n{report}')
+        return {
+            'test_accuracy': acc, 'test_f1_weighted': f1_w, 'test_f1_macro': f1_m,
+            'test_classification_report': report,
+        }
+    else:
+        y_pred = model.predict(X_test_scaled)
+        rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+        mae = mean_absolute_error(y_test, y_pred)
+        r2 = r2_score(y_test, y_pred)
+        logger.info(f'=== Evaluation TEST [{target_name}] ===')
+        logger.info(f'RMSE : {rmse:.4f}  MAE : {mae:.4f}  R² : {r2:.4f}')
+        return {'test_rmse': rmse, 'test_mae': mae, 'test_r2': r2}
+
+
+def train_regressor(model, param_grid, model_name, X_train, y_train, X_val, y_val, target_name, cv_n_jobs=-1):
     """Entraine un regresseur avec GridSearchCV."""
     logger.info(f'=== Entrainement regresseur : {model_name} [{target_name}] ===')
 
@@ -196,8 +269,8 @@ def train_regressor(model, param_grid, model_name, X_train, y_train, X_val, y_va
         param_grid=param_grid,
         cv=cv,
         scoring='neg_root_mean_squared_error',
-        n_jobs=-1,
-        verbose=0
+        n_jobs=cv_n_jobs,
+        verbose=0,
     )
 
     grid.fit(X_train, y_train)
@@ -270,8 +343,12 @@ def save_metrics(all_metrics, path):
             if model_name in all_metrics:
                 m = all_metrics[model_name]
                 f.write(f'  [{model_name}]\n')
-                f.write(f'    Accuracy          : {m.get("accuracy", "N/A"):.4f}\n')
-                f.write(f'    F1-score (weighted): {m.get("f1_score", "N/A"):.4f}\n')
+                f.write(f'    Accuracy           : {m.get("accuracy", "N/A"):.4f}\n')
+                f.write(f'    F1-weight (val)    : {m.get("f1_score", "N/A"):.4f}\n')
+                f.write(f'    F1-macro  (val)    : {m.get("f1_macro", "N/A"):.4f}\n')
+                f.write(f'    Accuracy  (TEST)   : {m.get("test_accuracy", "N/A"):.4f}\n')
+                f.write(f'    F1-weight (TEST)   : {m.get("test_f1_weighted", "N/A"):.4f}\n')
+                f.write(f'    F1-macro  (TEST)   : {m.get("test_f1_macro", "N/A"):.4f}\n')
                 f.write(f'    CV F1-score (moyen): {m.get("cv_score", "N/A"):.4f}\n')
                 f.write(f'    Meilleurs params   : {m.get("best_params", "N/A")}\n')
                 f.write('\n')
@@ -287,10 +364,14 @@ def save_metrics(all_metrics, path):
                 if key in all_metrics:
                     m = all_metrics[key]
                     f.write(f'    [{model_name}]\n')
-                    f.write(f'      RMSE : {m.get("rmse", "N/A"):.4f}\n')
-                    f.write(f'      MAE  : {m.get("mae", "N/A"):.4f}\n')
-                    f.write(f'      R²   : {m.get("r2", "N/A"):.4f}\n')
-                    f.write(f'      CV RMSE : {m.get("cv_rmse", "N/A"):.4f}\n')
+                    f.write(f'      RMSE (val)  : {m.get("rmse", "N/A"):.4f}\n')
+                    f.write(f'      MAE  (val)  : {m.get("mae", "N/A"):.4f}\n')
+                    f.write(f'      R²   (val)  : {m.get("r2", "N/A"):.4f}\n')
+                    if 'test_rmse' in m:
+                        f.write(f'      RMSE (TEST) : {m.get("test_rmse", "N/A"):.4f}\n')
+                        f.write(f'      MAE  (TEST) : {m.get("test_mae", "N/A"):.4f}\n')
+                        f.write(f'      R²   (TEST) : {m.get("test_r2", "N/A"):.4f}\n')
+                    f.write(f'      CV RMSE     : {m.get("cv_rmse", "N/A"):.4f}\n')
                     f.write(f'      Meilleurs params : {m.get("best_params", "N/A")}\n')
             f.write('\n')
 
@@ -307,25 +388,35 @@ def main():
     logger.info('DEBUT DE L\'ENTRAINEMENT DES MODELES')
     logger.info('=' * 60)
 
-    # ── Chargement ──────────────────────────────────────────────────────
+    # ── Chargement du dataset complet (features brutes, non normalisees) ──
     df = load_data(DATA_PATH)
 
-    # ── Classification ──────────────────────────────────────────────────
-    X_clf, y_clf, label_encoder, clf_features = prepare_classification_data(df)
+    # ── Chargement des splits pre-calcules par eda_preprocessing.py ───────
+    #   Garantit que le test set n'est jamais vu pendant l'entrainement.
+    X_clf_train, X_clf_val, X_clf_test, y_clf_train, y_clf_val, y_clf_test = load_splits()
 
-    # Train/val split (pas de test separe, on garde val pour evaluation)
-    X_clf_train, X_clf_val, y_clf_train, y_clf_val = train_test_split(
-        X_clf, y_clf, test_size=VAL_SIZE, random_state=RANDOM_STATE, stratify=y_clf
-    )
+    # S'assurer que les colonnes sont numeriques uniquement
+    numeric_cols = X_clf_train.select_dtypes(include=[np.number]).columns.tolist()
+    X_clf_train = X_clf_train[numeric_cols]
+    X_clf_val   = X_clf_val[numeric_cols]
+    X_clf_test  = X_clf_test[numeric_cols]
 
-    # Standardisation
+    # Label encoder
+    all_labels = pd.concat([y_clf_train, y_clf_val, y_clf_test]).unique()
+    le = LabelEncoder()
+    le.fit(sorted(all_labels))
+    y_clf_train_enc = le.transform(y_clf_train)
+    y_clf_val_enc   = le.transform(y_clf_val)
+    y_clf_test_enc  = le.transform(y_clf_test)
+
+    # Standardisation APRES le split (pas de data leakage)
     scaler_clf = StandardScaler()
     X_clf_train_scaled = scaler_clf.fit_transform(X_clf_train)
-    X_clf_val_scaled = scaler_clf.transform(X_clf_val)
+    X_clf_val_scaled   = scaler_clf.transform(X_clf_val)
+    X_clf_test_scaled  = scaler_clf.transform(X_clf_test)
 
-    # Sauvegarder le scaler et le label encoder pour inference
     joblib.dump(scaler_clf, os.path.join(MODEL_DIR, 'scaler_classification.pkl'))
-    joblib.dump(label_encoder, os.path.join(MODEL_DIR, 'label_encoder_culture.pkl'))
+    joblib.dump(le, os.path.join(MODEL_DIR, 'label_encoder_culture.pkl'))
     logger.info('Scaler et LabelEncoder de classification sauvegardes.')
 
     all_metrics = {}
@@ -351,19 +442,26 @@ def main():
     try:
         rf_clf_best, rf_clf_pred, rf_clf_metrics = train_classifier(
             rf_clf, rf_param_grid_light, 'RandomForest',
-            X_clf_train_scaled, y_clf_train, X_clf_val_scaled, y_clf_val
+            X_clf_train_scaled, y_clf_train_enc, X_clf_val_scaled, y_clf_val_enc
         )
         all_metrics['RandomForest'] = rf_clf_metrics
 
         # Sauvegarde
         joblib.dump(rf_clf_best, os.path.join(MODEL_DIR, 'random_forest_classifier.pkl'))
+        joblib.dump(scaler_clf, os.path.join(BEST_DIR, 'scaler_classification.pkl'))
+        joblib.dump(le, os.path.join(BEST_DIR, 'label_encoder_culture.pkl'))
         logger.info('Modele RandomForest classifier sauvegarde.')
+
+        # Evaluation test set
+        test_metrics = evaluate_on_test(rf_clf_best, scaler_clf, le, X_clf_test, y_clf_test_enc,
+                                         task='classification', target_name='RandomForest')
+        all_metrics['RandomForest'].update(test_metrics)
 
         # Matrice de confusion
         cm_path = os.path.join(FIGURES_DIR, 'confusion_matrix_RandomForest.png')
         plot_confusion_matrix(
-            y_clf_val, rf_clf_pred,
-            label_encoder.classes_,
+            y_clf_val_enc, rf_clf_pred,
+            le.classes_,
             'Matrice de confusion - Random Forest (validation)',
             cm_path
         )
@@ -374,21 +472,23 @@ def main():
     xgb_clf = xgb.XGBClassifier(
         random_state=RANDOM_STATE,
         eval_metric='mlogloss',
-        use_label_encoder=False
+        enable_categorical=False,
+        n_jobs=1,
     )
     xgb_param_grid = {
-        'n_estimators': [100, 200],
-        'max_depth': [3, 6],
-        'learning_rate': [0.1, 0.2],
-        'subsample': [0.8],
-        'colsample_bytree': [0.8]
+        'n_estimators': [100],
+        'max_depth': [6],
+        'learning_rate': [0.1],
     }
+    # XGBoost GridSearchCV: use 2 parallel jobs (XGBoost uses its own thread pool)
+    xgb_cv_n_jobs = 2
 
     logger.info('--- XGBoost Classifier ---')
     try:
         xgb_clf_best, xgb_clf_pred, xgb_clf_metrics = train_classifier(
             xgb_clf, xgb_param_grid, 'XGBoost',
-            X_clf_train_scaled, y_clf_train, X_clf_val_scaled, y_clf_val
+            X_clf_train_scaled, y_clf_train_enc, X_clf_val_scaled, y_clf_val_enc,
+            cv_n_jobs=xgb_cv_n_jobs,
         )
         all_metrics['XGBoost'] = xgb_clf_metrics
 
@@ -396,11 +496,16 @@ def main():
         joblib.dump(xgb_clf_best, os.path.join(MODEL_DIR, 'xgboost_classifier.pkl'))
         logger.info('Modele XGBoost classifier sauvegarde.')
 
+        # Evaluation test set
+        test_metrics = evaluate_on_test(xgb_clf_best, scaler_clf, le, X_clf_test, y_clf_test_enc,
+                                         task='classification', target_name='XGBoost')
+        all_metrics['XGBoost'].update(test_metrics)
+
         # Matrice de confusion
         cm_path = os.path.join(FIGURES_DIR, 'confusion_matrix_XGBoost.png')
         plot_confusion_matrix(
-            y_clf_val, xgb_clf_pred,
-            label_encoder.classes_,
+            y_clf_val_enc, xgb_clf_pred,
+            le.classes_,
             'Matrice de confusion - XGBoost (validation)',
             cm_path
         )
@@ -414,17 +519,25 @@ def main():
     for target in regression_targets:
         logger.info(f'=== Regression : {target} ===')
 
-        X_reg, y_reg = prepare_regression_data(df, target, reg_features)
+        X_reg = df[reg_features].copy()
+        y_reg = df[target].values
 
-        # Split
-        X_reg_train, X_reg_val, y_reg_train, y_reg_val = train_test_split(
-            X_reg, y_reg, test_size=VAL_SIZE, random_state=RANDOM_STATE
+        mask = ~np.isnan(y_reg)
+        X_reg = X_reg[mask]
+        y_reg = y_reg[mask]
+
+        # Split train/val/test (70/15/15) stratifie impossible pour regression
+        X_reg_train, X_reg_temp, y_reg_train, y_reg_temp = train_test_split(
+            X_reg, y_reg, test_size=0.30, random_state=RANDOM_STATE
+        )
+        X_reg_val, X_reg_test, y_reg_val, y_reg_test = train_test_split(
+            X_reg_temp, y_reg_temp, test_size=0.50, random_state=RANDOM_STATE
         )
 
-        # Standardisation
         scaler_reg = StandardScaler()
         X_reg_train_scaled = scaler_reg.fit_transform(X_reg_train)
-        X_reg_val_scaled = scaler_reg.transform(X_reg_val)
+        X_reg_val_scaled   = scaler_reg.transform(X_reg_val)
+        X_reg_test_scaled  = scaler_reg.transform(X_reg_test)
 
         # Sauvegarder le scaler pour ce target
         joblib.dump(scaler_reg, os.path.join(MODEL_DIR, f'scaler_regression_{target}.pkl'))
@@ -449,6 +562,12 @@ def main():
             joblib.dump(rf_reg_best, os.path.join(MODEL_DIR, f'random_forest_regressor_{target}.pkl'))
             logger.info(f'Modele RandomForest regressor [{target}] sauvegarde.')
 
+            # Evaluation test set
+            if X_reg_test_scaled is not None:
+                test_m = evaluate_on_test(rf_reg_best, scaler_reg, None, X_reg_test, y_reg_test,
+                                          task='regression', target_name=f'RF_{target}')
+                rf_reg_metrics.update(test_m)
+
             # Scatter plot
             scatter_path = os.path.join(FIGURES_DIR, f'regression_{target}_RF.png')
             plot_regression_scatter(y_reg_val, rf_reg_pred, target, scatter_path)
@@ -456,25 +575,30 @@ def main():
             logger.error(f'Erreur RandomForest regressor [{target}] : {e}')
 
         # ─── XGBoost Regressor ──────────────────────────────────────────
-        xgb_reg = xgb.XGBRegressor(random_state=RANDOM_STATE)
+        xgb_reg = xgb.XGBRegressor(random_state=RANDOM_STATE, n_jobs=1)
         xgb_reg_param_grid = {
-            'n_estimators': [100, 200],
-            'max_depth': [3, 6, 9],
-            'learning_rate': [0.01, 0.1, 0.2],
-            'subsample': [0.8, 1.0],
-            'colsample_bytree': [0.8, 1.0]
+            'n_estimators': [150],
+            'max_depth': [4, 6],
+            'learning_rate': [0.1],
         }
+        xgb_cv_n_jobs_reg = 2
 
         try:
             xgb_reg_best, xgb_reg_pred, xgb_reg_metrics = train_regressor(
                 xgb_reg, xgb_reg_param_grid, 'XGBoost',
                 X_reg_train_scaled, y_reg_train, X_reg_val_scaled, y_reg_val,
-                target
+                target, cv_n_jobs=xgb_cv_n_jobs_reg,
             )
             all_metrics[f'XGBoost_{target}'] = xgb_reg_metrics
 
             joblib.dump(xgb_reg_best, os.path.join(MODEL_DIR, f'xgboost_regressor_{target}.pkl'))
             logger.info(f'Modele XGBoost regressor [{target}] sauvegarde.')
+
+            # Evaluation test set
+            if X_reg_test_scaled is not None:
+                test_m = evaluate_on_test(xgb_reg_best, scaler_reg, None, X_reg_test, y_reg_test,
+                                          task='regression', target_name=f'XGB_{target}')
+                xgb_reg_metrics.update(test_m)
 
             # Scatter plot
             scatter_path = os.path.join(FIGURES_DIR, f'regression_{target}_XGB.png')
@@ -492,17 +616,26 @@ def main():
 
     if 'RandomForest' in all_metrics:
         m = all_metrics['RandomForest']
-        print(f'  RandomForest Classifier - Acc: {m["accuracy"]:.4f}, F1: {m["f1_score"]:.4f}')
+        print(f'  RandomForest Classifier')
+        print(f'    Val : Acc={m["accuracy"]:.4f}, F1w={m["f1_score"]:.4f}, F1m={m["f1_macro"]:.4f}')
+        if 'test_accuracy' in m:
+            print(f'    Test: Acc={m["test_accuracy"]:.4f}, F1w={m["test_f1_weighted"]:.4f}, F1m={m["test_f1_macro"]:.4f}')
     if 'XGBoost' in all_metrics:
         m = all_metrics['XGBoost']
-        print(f'  XGBoost Classifier      - Acc: {m["accuracy"]:.4f}, F1: {m["f1_score"]:.4f}')
+        print(f'  XGBoost Classifier')
+        print(f'    Val : Acc={m["accuracy"]:.4f}, F1w={m["f1_score"]:.4f}, F1m={m["f1_macro"]:.4f}')
+        if 'test_accuracy' in m:
+            print(f'    Test: Acc={m["test_accuracy"]:.4f}, F1w={m["test_f1_weighted"]:.4f}, F1m={m["test_f1_macro"]:.4f}')
 
     for target in regression_targets:
         for model_name in ['RandomForest', 'XGBoost']:
             key = f'{model_name}_{target}'
             if key in all_metrics:
                 m = all_metrics[key]
-                print(f'  {model_name} Regressor [{target}] - RMSE: {m["rmse"]:.2f}, R²: {m["r2"]:.4f}')
+                test_info = ''
+                if 'test_r2' in m:
+                    test_info = f', Test R²={m["test_r2"]:.4f}'
+                print(f'  {model_name} Regressor [{target}] - Val R²: {m["r2"]:.4f}{test_info}')
 
     print('=' * 65)
     print(f'  Modeles sauvegardes dans : {MODEL_DIR}')

@@ -1,7 +1,7 @@
 # Rapport d Analyse Exploratoire (EDA)
 ## Projet Robot Agricole - Base de reference sol/cultures africaines
 
-**Date:** 2026-06-18 06:57:54  
+**Date:** 2026-06-24 02:16:25  
 **Source:** 16 cultures africaines (FAO ECOCROP, IITA, iSDA, Kaggle)  
 
 ---
@@ -98,19 +98,17 @@ Relations bivariees entre variables, colorees par culture. Tendance et clusters 
 
 ## 5. Pretraitement effectue
 
-### 5.1 Normalisation (StandardScaler)
+### 5.1 Pas de normalisation dans ce script
 
-Colonnes normalisees: **N, P, K, pH, temperature, humidite**
+La StandardScaler est appliquee APRES le split train/val/test dans `model_training.py` pour eviter la fuite de donnees (data leakage). Les features brutes sont sauvegardees dans le dataset preprocesse.
 
-- Moyenne ~ 0, ecart-type ~ 1 apres transformation
-
-### 5.2 Features croisees creees
+### 5.1 Features croisees creees
 
 - **ratio_N_P**: Rapport N/P\n- **ratio_N_K**: Rapport N/K\n- **ratio_P_K**: Rapport P/K\n- **score_NPK_balance**: Score d equilibre NPK (0-1)
 - **EC_approx**: EC estimee par plus proche pH iSDA
 - **pH_times_EC**: Interaction pH x Conductivite electrique
 
-### 5.3 Split train/test/validation
+### 5.2 Split train/test/validation
 
 | Ensemble | Taille | Proportion |
 |----------|--------|------------|
@@ -180,7 +178,7 @@ EDA portant sur 1697 echantillons / 15 cultures. Dataset preprocesse: 14 caracte
 
 | Fichier | Description |
 |---------|-------------|
-| `dataset_preprocessed.csv` | Dataset complet features normalisees + croisees |
+| `dataset_preprocessed.csv` | Dataset complet features brutes + croisees |
 | `figures/histogrammes.png` | Histogrammes de toutes les variables |
 | `figures/boxplots_par_culture.png` | Boxplots par culture |
 | `figures/heatmap_correlation.png` | Matrice de correlation |

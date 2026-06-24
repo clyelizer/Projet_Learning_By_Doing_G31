@@ -42,7 +42,7 @@ sns.set_theme(style='whitegrid', palette='muted', font_scale=0.9)
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 ML_DIR     = os.path.join(SCRIPT_DIR, '..')
 BASE_DIR   = os.path.join(ML_DIR, '01_databases')
-DATA_DIR   = '/home/coulibaly/HERMES_wd/datasets'
+DATA_DIR = os.environ.get('AGROSCAN_DATA_DIR', '/home/coulibaly/HERMES_wd/datasets')
 FIGURES_DIR = os.path.join(ML_DIR, '04_figures')
 
 JSON_PATH    = os.path.join(BASE_DIR, 'base_reference_agricole.json')
@@ -286,27 +286,13 @@ if len(pair_cols) >= 3:
     print("  -> pairplot.png")
 
 # ---------------------------------------------------------------------------
-# 4. NORMALISATION AVEC STANDARDSCALER
-# ---------------------------------------------------------------------------
-print(f"\n[{datetime.now().strftime('%H:%M:%S')}] Normalisation (StandardScaler)...")
-
-cols_to_scale = ['N', 'P', 'K', 'pH', 'temperature', 'humidite']
-cols_to_scale = [c for c in cols_to_scale if c in df_crop.columns]
-
-scaler = StandardScaler()
-df_scaled = df_crop.copy()
-df_scaled[cols_to_scale] = scaler.fit_transform(df_crop[cols_to_scale])
-
-print(f"  -> Colonnes normalisees: {cols_to_scale}")
-print(f"  -> Moyennes apres normalisation: {df_scaled[cols_to_scale].mean().round(4).to_dict()}")
-print(f"  -> Ecarts-types apres normalisation: {df_scaled[cols_to_scale].std().round(4).to_dict()}")
-
-# ---------------------------------------------------------------------------
-# 5. FEATURES CROISEES
+# 4. FEATURES CROISEES (calculees sur donnees brutes — pas de normalisation
+#    avant le split ; le scaling sera applique APRES le train/test/val split
+#    dans model_training.py pour eviter la fuite de donnees)
 # ---------------------------------------------------------------------------
 print(f"\n[{datetime.now().strftime('%H:%M:%S')}] Creation des features croisees...")
 
-df_feat = df_scaled.copy()
+df_feat = df_crop.copy()
 
 eps = 1e-10
 
@@ -483,10 +469,11 @@ with open(RAPPORT_MD, 'w', encoding='utf-8') as f:
 
     # 5. Pretraitement
     f.write("## 5. Pretraitement effectue\n\n")
-    f.write("### 5.1 Normalisation (StandardScaler)\n\n")
-    f.write("Colonnes normalisees: **{}**\n\n".format(', '.join(cols_to_scale)))
-    f.write("- Moyenne ~ 0, ecart-type ~ 1 apres transformation\n\n")
-    f.write("### 5.2 Features croisees creees\n\n")
+    f.write("### 5.1 Pas de normalisation dans ce script\n\n")
+    f.write("La StandardScaler est appliquee APRES le split train/val/test dans ")
+    f.write("`model_training.py` pour eviter la fuite de donnees (data leakage). ")
+    f.write("Les features brutes sont sauvegardees dans le dataset preprocesse.\n\n")
+    f.write("### 5.1 Features croisees creees\n\n")
     new_cols = [c for c in df_feat.columns if c not in df_crop.columns]
     for col in new_cols:
         if 'ratio' in col:
@@ -502,7 +489,7 @@ with open(RAPPORT_MD, 'w', encoding='utf-8') as f:
             f.write(f"- **{col}**: Feature derivee\n")
     f.write("\n")
 
-    f.write("### 5.3 Split train/test/validation\n\n")
+    f.write("### 5.2 Split train/test/validation\n\n")
     f.write(f"| Ensemble | Taille | Proportion |\n")
     f.write(f"|----------|--------|------------|\n")
     f.write(f"| Train | {len(X_train)} | {100*len(X_train)/total:.1f}% |\n")
@@ -530,7 +517,7 @@ with open(RAPPORT_MD, 'w', encoding='utf-8') as f:
     f.write(f"Dataset preprocesse: {df_feat.shape[1]} caracteristiques.\n\n")
     f.write("| Fichier | Description |\n")
     f.write("|---------|-------------|\n")
-    f.write("| `dataset_preprocessed.csv` | Dataset complet features normalisees + croisees |\n")
+    f.write("| `dataset_preprocessed.csv` | Dataset complet features brutes + croisees |\n")
     f.write("| `figures/histogrammes.png` | Histogrammes de toutes les variables |\n")
     f.write("| `figures/boxplots_par_culture.png` | Boxplots par culture |\n")
     f.write("| `figures/heatmap_correlation.png` | Matrice de correlation |\n")
