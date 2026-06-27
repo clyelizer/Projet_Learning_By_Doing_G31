@@ -19,6 +19,21 @@
         });
     });
 
+    // ── Logout (AJAX) ────────────────────────────────────────────
+    const logoutLink = document.getElementById('logout-link');
+    if (logoutLink) {
+        logoutLink.addEventListener('click', async function (e) {
+            e.preventDefault();
+            try {
+                await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                });
+            } catch {}
+            window.location.href = '/login?logout=1';
+        });
+    }
+
     const toggle = document.getElementById('nav-toggle');
     const links = document.getElementById('nav-links');
     if (toggle && links) {
@@ -42,6 +57,8 @@
         history.pushState(null, '', '#' + page);
         loadPage(page);
     }
+
+    window.navigate = navigate;
 
     window.addEventListener('popstate', () => {
         const page = location.hash.replace('#', '') || 'dashboard';
@@ -83,7 +100,7 @@
         const waypoints = results?.waypoints || [];
 
         switch (page) {
-            case 'dashboard': renderDashboard(main, results, waypoints); break;
+            case 'dashboard': await renderDashboard(main, results, waypoints); break;
             case 'analyze': renderAnalyze(main); break;
             case 'reco': renderReco(main); break;
             case 'base-ref': renderBaseRef(main); break;
@@ -91,46 +108,135 @@
             case 'data': renderData(main, waypoints); break;
             case 'doctor': renderDoctor(main); break;
             case 'mission': renderMission(main); break;
+            case 'settings': renderSettings(main); break;
+            case 'network': renderNetwork(main); break;
+            case 'email-config': renderEmailConfig(main); break;
+            case 'account': renderAccount(main); break;
+            case 'backups': renderBackups(main); break;
             default: renderDashboard(main, results, waypoints);
         }
     }
 
     // ── Dashboard ────────────────────────────────────────────────
-    function renderDashboard(main, results, waypoints) {
+    async function renderDashboard(main, results, waypoints) {
         const mission = results?.mission || {};
         const withSensor = waypoints.filter(w => w.sensor).length;
         const totalPhotos = waypoints.reduce((s, w) => s + (w.photos?.length || 0), 0);
+        const avgHumidity = withSensor
+            ? (waypoints.reduce((s, w) => s + (w.sensor?.humidity_pct || 0), 0) / withSensor).toFixed(1)
+            : '—';
+        const avgTemp = withSensor
+            ? (waypoints.reduce((s, w) => s + (w.sensor?.temperature_c || 0), 0) / withSensor).toFixed(1)
+            : '—';
 
         main.innerHTML = `
-            <h1>📊 Dashboard Mission</h1>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <span class="stat-icon">📍</span>
-                    <span class="stat-value">${waypoints.length}</span>
-                    <span class="stat-label">Waypoints</span>
+            <h1>🌱 Mon Champ</h1>
+
+            <!-- 4 Cartouches -->
+            <div class="cartouche-grid">
+                <div class="cartouche">
+                    <div class="cartouche-icon">📍</div>
+                    <div class="cartouche-label">Waypoints</div>
+                    <div class="cartouche-value">${waypoints.length}</div>
+                    <div class="cartouche-sub">points de mesure</div>
                 </div>
-                <div class="stat-card">
-                    <span class="stat-icon">🧪</span>
-                    <span class="stat-value">${withSensor}</span>
-                    <span class="stat-label">Mesures</span>
+                <div class="cartouche">
+                    <div class="cartouche-icon">🧪</div>
+                    <div class="cartouche-label">Analyses</div>
+                    <div class="cartouche-value">${withSensor}</div>
+                    <div class="cartouche-sub">échantillons prélevés</div>
                 </div>
-                <div class="stat-card">
-                    <span class="stat-icon">📸</span>
-                    <span class="stat-value">${totalPhotos}</span>
-                    <span class="stat-label">Photos</span>
+                <div class="cartouche">
+                    <div class="cartouche-icon">💧</div>
+                    <div class="cartouche-label">Humidité moy.</div>
+                    <div class="cartouche-value">${avgHumidity !== '—' ? avgHumidity + '%' : '—'}</div>
+                    <div class="cartouche-sub">${avgTemp !== '—' ? avgTemp + '°C' : ''}</div>
                 </div>
-                <div class="stat-card">
-                    <span class="stat-icon">📅</span>
-                    <span class="stat-value">${(mission.start_time || '—').slice(0, 10)}</span>
-                    <span class="stat-label">Date</span>
+                <div class="cartouche">
+                    <div class="cartouche-icon">📸</div>
+                    <div class="cartouche-label">Photos</div>
+                    <div class="cartouche-value">${totalPhotos}</div>
+                    <div class="cartouche-sub">captures du sol</div>
                 </div>
             </div>
-            ${waypoints.length ? renderTable(waypoints) : '<div class="empty-state"><p>Aucune donnée. Lancez une mission.</p></div>'}
+
+            ${waypoints.length ? '<div id="map-container">' + await renderMap(waypoints) + '</div>' : ''}
+            ${waypoints.length ? renderWpTable(waypoints) : '<div class="empty-state"><p>Aucune donnée. Lancez une mission.</p></div>'}
+
+            <!-- CTA Buttons -->
+            <div class="dash-cta">
+                <button class="btn btn-primary" onclick="navigate('mission')">Lancer une mission</button>
+                <button class="btn btn-primary" onclick="navigate('reco')">Voir les conseils</button>
+                <button class="btn btn-secondary" onclick="navigate('data')">Voir les donnees collectees</button>
+            </div>
         `;
     }
 
-    function renderTable(waypoints) {
-        let rows = waypoints.map(wp => {
+    let mapConfig = null; // cached map.json
+
+    async function getMapConfig() {
+        if (mapConfig) return mapConfig;
+        const data = await fetchJSON('/api/mission/map');
+        if (data && data.table) mapConfig = data;
+        return mapConfig;
+    }
+
+    async function renderMap(waypoints) {
+        const W = 600, H = 320;
+        const cfg = await getMapConfig();
+        const tableW = cfg?.table?.width_cm || 150;
+        const tableH = cfg?.table?.height_cm || 100;
+        const margin = 0.12; // 12% margin so points aren't on the edge
+        const scaleX = (W * (1 - 2 * margin)) / tableW;
+        const scaleY = (H * (1 - 2 * margin)) / tableH;
+        const ox = W * margin;
+        const oy = H * margin;
+
+        // Map waypoints by id for lookup
+        const wpMap = {};
+        if (cfg?.waypoints) {
+            cfg.waypoints.forEach(wp => { wpMap[wp.id] = wp; });
+        }
+
+        const coords = waypoints.map((wp, i) => {
+            const mapWp = wpMap[wp.waypoint_id] || wpMap[i + 1];
+            if (mapWp && typeof mapWp.x === 'number' && typeof mapWp.y === 'number') {
+                return { x: ox + mapWp.x * scaleX, y: oy + mapWp.y * scaleY };
+            }
+            // Fallback: spread evenly with slight wave
+            const fx = ox + (i / Math.max(waypoints.length - 1, 1)) * (W - 2 * ox);
+            const fy = oy + (H / 2 - oy) + Math.sin(i * 0.8) * 30;
+            return { x: fx, y: fy };
+        });
+
+        const pathD = coords.map((c, i) => `${i === 0 ? 'M' : 'L'}${c.x.toFixed(0)},${c.y.toFixed(0)}`).join(' ');
+        const dots = waypoints.map((wp, i) => {
+            const zoneLabel = `Zone ${i + 1}`;
+            return `<circle class="wp-dot" cx="${coords[i].x.toFixed(0)}" cy="${coords[i].y.toFixed(0)}" r="9" fill="#5c3a1e" fill-opacity="0.85" data-wp-idx="${i}" />
+                     <text class="wp-label" x="${coords[i].x.toFixed(0)}" y="${(coords[i].y - 16).toFixed(0)}" text-anchor="middle">${zoneLabel}</text>`;
+        }).join('');
+
+        return `
+            <div class="wp-map-wrapper">
+                <h3>🗺️ Carte du champ</h3>
+                <p class="wp-map-instruction">Cliquez sur un point pour voir les détails de la zone</p>
+                <svg class="wp-map" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="solGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#8B6914" stop-opacity="0.35" />
+                            <stop offset="50%" stop-color="#6B4F1A" stop-opacity="0.50" />
+                            <stop offset="100%" stop-color="#4A3520" stop-opacity="0.65" />
+                        </linearGradient>
+                    </defs>
+                    <rect x="0" y="0" width="${W}" height="${H}" fill="url(#solGrad)" rx="8" />
+                    <path class="wp-path" d="${pathD}" />
+                    ${dots}
+                </svg>
+            </div>`;
+    }
+
+    function renderWpTable(waypoints) {
+        let rows = waypoints.map((wp, i) => {
             const s = wp.sensor;
             return `<tr>
                 <td>${wp.waypoint_id}</td>
@@ -139,19 +245,163 @@
                 <td>${s ? `${s.ec_us_cm?.toFixed(0) || '—'}` : '—'}</td>
                 <td>${s ? `${s.ph?.toFixed(1) || '—'}` : '—'}</td>
                 <td>${wp.photos?.length || 0}</td>
+                <td>
+                    <div class="wp-actions">
+                        <button onclick="openWpModal(${i})">👁️</button>
+                        <button onclick="playWpTts(${i})">🔊</button>
+                    </div>
+                </td>
             </tr>`;
         }).join('');
         return `
-            <div class="section">
-                <h2>📋 Résultats</h2>
-                <div class="table-wrapper">
-                    <table>
-                        <thead><tr><th>#</th><th>💧 Humidité</th><th>🌡️ Temp</th><th>⚡ EC</th><th>🧪 pH</th><th>📸</th></tr></thead>
-                        <tbody>${rows}</tbody>
-                    </table>
-                </div>
+            <div class="wp-table-wrapper">
+                <h3>📋 Détail des mesures</h3>
+                <table class="wp-table">
+                    <thead><tr><th>#</th><th>💧 Humidité</th><th>🌡️ Temp</th><th>⚡ EC</th><th>🧪 pH</th><th>📸</th><th>Actions</th></tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>
             </div>`;
     }
+
+    // ── Modal ────────────────────────────────────────────────────
+    window.openWpModal = async function (idx) {
+        const wp = results?.waypoints?.[idx];
+        if (!wp) return;
+        const s = wp.sensor || {};
+        const modal = document.getElementById('wp-modal');
+        const body = document.getElementById('wp-modal-body');
+        if (!modal || !body) return;
+
+        // Fetch real ML recommendation + LLM explanation
+        let recoHtml = '<p>Chargement...</p>';
+        let recoText = '';
+        try {
+            const resp = await fetch('/api/recommendations?waypoint_id=' + wp.waypoint_id, { credentials: 'same-origin' });
+            if (!resp.ok) {
+                recoHtml = `<p>Erreur ${resp.status}: ${resp.statusText}</p>`;
+            } else {
+                const recoData = await resp.json();
+                // LLM explanation (natural language)
+                if (recoData.explication && !recoData.explication.error) {
+                    const exp = recoData.explication;
+                    let zonesHtml = '';
+                    if (exp.zones && exp.zones.length > 0) {
+                        zonesHtml = exp.zones.map(z => `
+                            <div class="wp-reco-llm-zone">
+                                <div class="wp-reco-llm-culture"><strong>${z.culture_conseillee || '—'}</strong>
+                                    <span class="wp-reco-llm-urgence urgence-${z.urgence || 'moyenne'}">${z.urgence || ''}</span>
+                                </div>
+                                <p class="wp-reco-llm-explication">${z.explication || ''}</p>
+                                <div class="wp-reco-llm-action">${(z.action || '').replace(/\n/g, '<br>')}</div>
+                            </div>
+                        `).join('');
+                    }
+                    const summary = exp.resume_global ? `<div class="wp-reco-llm-summary"><h5>Résumé</h5><p>${exp.resume_global}</p></div>` : '';
+                    recoHtml = `${zonesHtml}${summary}`;
+                    // Build TTS text from LLM audio or explanation
+                    recoText = exp.audio_propice || exp.resume_global || '';
+                } else if (recoData.ml && recoData.ml.classement) {
+                    // Fallback: show raw scores (no LLM available)
+                    const top = recoData.ml.classement.slice(0, 3);
+                    const cultures = top.map(c =>
+                        `<div class="wp-reco-item"><strong>${c.culture}</strong> — score ${c.score}%</div>`
+                    ).join('');
+                    const npk = recoData.ml.fertilisation?.NPK_recommandation || '';
+                    recoHtml = `<div class="wp-reco-cultures">${cultures}</div>${npk ? `<p class="wp-reco-npk">${npk}</p>` : ''}`;
+                    // Build a richer TTS fallback text
+                    const topNames = top.map(c => c.culture).join(', ');
+                    const npkText = recoData.ml.npk_estimes || {};
+                    recoText = `Pour ce sol, les cultures recommandées sont : ${topNames}. ` +
+                        (npkText.N_kg_ha ? `Azote estimé ${npkText.N_kg_ha} kilogrammes par hectare. ` : '') +
+                        (npk ? `Fertilisation recommandée : ${npk}. ` : '') +
+                        `La meilleure culture est ${recoData.ml.top_culture || topNames} avec un score de ${recoData.ml.top_score || top[0]?.score || 0} pour cent.`;
+                } else if (recoData.error) {
+                    recoHtml = `<p>${recoData.error}</p>`;
+                }
+            }
+        } catch (e) {
+            recoHtml = `<p>Erreur réseau: ${e.message}</p>`;
+        }
+        // Store reco text for TTS
+        wp._recoText = recoText || `Waypoint ${wp.waypoint_id}`;
+
+        const photos = (wp.photos || []).map(p => {
+            const fname = typeof p === 'string' ? p.split('/').pop() : p;
+            return `<img class="wp-photo" src="/photos/${fname}" alt="Photo waypoint ${wp.waypoint_id}" loading="lazy">`;
+        }).join('');
+
+        body.innerHTML = `
+            <h2>Waypoint ${wp.waypoint_id}</h2>
+            <div class="wp-detail-grid">
+                <div class="wp-detail-item"><label>Humidite</label><span class="val">${s.humidity_pct?.toFixed(1) || '—'} %</span></div>
+                <div class="wp-detail-item"><label>Temperature</label><span class="val">${s.temperature_c?.toFixed(1) || '—'} °C</span></div>
+                <div class="wp-detail-item"><label>Conductivite (EC)</label><span class="val">${s.ec_us_cm?.toFixed(0) || '—'} µS/cm</span></div>
+                <div class="wp-detail-item"><label>pH</label><span class="val">${s.ph?.toFixed(1) || '—'}</span></div>
+            </div>
+            <div class="wp-reco">
+                <h4>Recommandation</h4>
+                ${recoHtml}
+            </div>
+            <button class="wp-tts-btn" onclick="playWpTts(${idx})">Ecouter la recommandation</button>
+            ${photos ? `<div class="wp-photos-section">${photos}</div>` : ''}
+        `;
+
+        modal.classList.remove('hidden');
+    };
+
+    window.closeWpModal = function () {
+        const modal = document.getElementById('wp-modal');
+        if (modal) modal.classList.add('hidden');
+    };
+
+    // ── TTS ──────────────────────────────────────────────────────
+    window.playWpTts = async function (idx) {
+        const wp = results?.waypoints?.[idx];
+        if (!wp) return;
+        const player = document.getElementById('tts-player');
+        if (!player) return;
+
+        const text = wp._recoText || `Waypoint ${wp.waypoint_id}. ` +
+            `Humidite ${wp.sensor?.humidity_pct?.toFixed(0) || '?'} pour cent. ` +
+            `Temperature ${wp.sensor?.temperature_c?.toFixed(1) || '?'} degres. ` +
+            `pH ${wp.sensor?.ph?.toFixed(1) || '?'}.`;
+
+        try {
+            const resp = await fetch('/api/tts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text, language: 'fr' }),
+            });
+            if (!resp.ok) throw new Error('TTS failed');
+            const data = await resp.json();
+            if (data.error) throw new Error(data.error);
+            if (!data.path) throw new Error('No audio path');
+            // data.path is relative to PROJECT_DIR/data/audio/
+            const audioPath = '/audio/' + data.path.split('/').pop();
+            player.src = audioPath;
+            player.classList.remove('hidden');
+            player.play().catch(() => {});
+        } catch {
+            // fallback: nothing
+        }
+    };
+
+    // ── Modal event listeners (delegated) ────────────────────────
+    document.addEventListener('click', function (e) {
+        const backdrop = document.getElementById('wp-modal-backdrop');
+        const closeBtn = document.getElementById('wp-modal-close');
+        if (e.target === backdrop || e.target === closeBtn) {
+            closeWpModal();
+        }
+    });
+
+    // ── SVG map click delegation ─────────────────────────────────
+    document.addEventListener('click', function (e) {
+        const dot = e.target.closest('.wp-dot');
+        if (dot && dot.dataset.wpIdx !== undefined) {
+            openWpModal(parseInt(dot.dataset.wpIdx));
+        }
+    });
 
     // ══════════════════════════════════════════════════════════════
     // PAGE: Analyse interactive
@@ -454,17 +704,21 @@
             return;
         }
 
-        const summaryColor = conseils.urgence_globale === 'haute' ? '#c62828' : conseils.urgence_globale === 'moyenne' ? '#f57f17' : '#2e7d32';
         const langLabel = recoLang === 'fr' ? 'Français' : 'English';
+        const missionDate = results?.metadata?.date || results?.timestamp
+            ? new Date(results?.metadata?.date || results?.timestamp).toLocaleDateString('fr-FR')
+            : null;
 
         let html = `
-            <h1>🧪 Recommandations agricoles</h1>
-            <p class="subtitle">Conseils personnalises basees sur les mesures du robot.</p>
+            <h1>📋 Conseils</h1>
+            <p class="subtitle">Recommandations personnalisées basées sur les données collectées par le robot.</p>
 
-            <div class="card" style="text-align:center">
-                <div style="display:flex;align-items:center;justify-content:center;gap:var(--spacing-sm);flex-wrap:wrap">
+            ${missionDate ? `<p class="reco-data-badge">🤖 Conseil basé sur les données du robot du <strong>${missionDate}</strong></p>` : ''}
+
+            <div class="card reco-lang-card">
+                <div class="reco-lang-row">
                     <span>🌐 Langue :</span>
-                    <select id="lang-select" style="padding:var(--spacing-xs) var(--spacing-sm);border-radius:var(--radius-sm);border:1px solid var(--gray-300);font-size:var(--font-sm);max-width:280px">
+                    <select id="lang-select" class="reco-lang-select">
                         <option value="fr" ${recoLang === 'fr' ? 'selected' : ''}>Français</option>
                         <option value="en" ${recoLang === 'en' ? 'selected' : ''}>English</option>
                         <option value="ha" ${recoLang === 'ha' ? 'selected' : ''}>Hausa (هَوُسَ)</option>
@@ -487,28 +741,24 @@
                         <option value="wo" ${recoLang === 'wo' ? 'selected' : ''}>Wolof</option>
                         <option value="ff" ${recoLang === 'ff' ? 'selected' : ''}>Fulfulde</option>
                     </select>
-                    <span id="lang-loading" style="display:none;font-size:var(--font-xs);color:var(--gray-500)">⏳ Regénération...</span>
+                    <span id="lang-loading" class="reco-lang-loading">⏳ Regénération...</span>
                 </div>
-                <div style="font-size:var(--font-xs);color:var(--gray-500);margin-top:var(--spacing-xs)">
-                    ${recoLang === 'ha' || recoLang === 'sw' || recoLang === 'af' || recoLang === 'am' || recoLang === 'ar' 
-                        ? '⚡ Synthèse vocale par gTTS · Texte généré par IA'
-                        : '⚡ Synthèse vocale par gTTS · Texte généré par IA (certaines langues experimental)'}
-                </div>
+                <p class="reco-lang-note">⚡ Synthèse vocale par gTTS · Texte généré par IA</p>
             </div>
 
             ${conseils.resume_global ? `
-            <div class="card" style="border-left: 4px solid ${summaryColor}">
+            <div class="card reco-summary-card">
                 <h3>🌍 Vue d'ensemble du champ</h3>
-                <p style="font-size:var(--font-md);line-height:1.6">${conseils.resume_global}</p>
+                <p class="reco-summary-text">${conseils.resume_global}</p>
             </div>` : ''}
 
             ${tts.url ? `
-            <div class="card" style="text-align:center">
-                <h3>🔊 Ecouter les recommandations</h3>
+            <div class="card reco-tts-card">
+                <h3>🔊 Écouter les recommandations</h3>
                 <audio controls style="width:100%;margin-top:var(--spacing-sm)" autoplay key="${tts.url}">
                     <source src="${tts.url}">
                 </audio>
-                <span style="font-size:var(--font-xs);color:var(--gray-500)">Moteur: ${tts.engine || '?'} — ${langLabel}</span>
+                <p class="reco-tts-meta">Moteur: ${tts.engine || '?'} — ${langLabel}</p>
             </div>` : ''}`;
 
         recos.forEach((wp) => {
@@ -518,17 +768,24 @@
             const top = ml.top_culture || '—';
             const ranking = ml.classement || [];
 
-            // Trouver le conseil LLM pour cette zone
             const zoneConseil = (conseils.zones || []).find(z => z.zone === wp.waypoint_id) || {};
-            const urgColor = zoneConseil.urgence === 'haute' ? '#c62828' : zoneConseil.urgence === 'moyenne' ? '#f57f17' : '#2e7d32';
-            const urgenceLabel = recoLang === 'fr'
-                ? ({ haute: 'Haute', moyenne: 'Moyenne', faible: 'Faible' })[zoneConseil.urgence] || zoneConseil.urgence
-                : ({ haute: 'High', moyenne: 'Medium', faible: 'Low' })[zoneConseil.urgence] || zoneConseil.urgence;
+            const urgClass = zoneConseil.urgence === 'haute' ? 'haute' : zoneConseil.urgence === 'moyenne' ? 'moyenne' : 'faible';
+            const urgLabel = recoLang === 'fr'
+                ? ({ haute: 'Haute', moyenne: 'Moyenne', faible: 'Faible' })[zoneConseil.urgence] || 'Faible'
+                : ({ haute: 'High', moyenne: 'Medium', faible: 'Low' })[zoneConseil.urgence] || 'Low';
+
+            // Build action plan bullets
+            const actionLines = zoneConseil.action ? zoneConseil.action.split('\n').filter(l => l.trim()) : [];
+            const fertilisationLine = ml.fertilisation?.NPK_recommandation || '';
 
             html += `
-                <div class="section rec-section" style="border-left: 4px solid ${urgColor}">
-                    <h2>📍 Zone #${wp.waypoint_id}</h2>
-                    <div class="rec-summary">
+                <div class="reco-zone-card urgence-${urgClass}">
+                    <div class="reco-zone-header">
+                        <h2>📍 Zone #${wp.waypoint_id}</h2>
+                        <span class="reco-zone-urgence urgence-${urgClass}">🟢 Urgence ${urgLabel.toLowerCase()}</span>
+                    </div>
+
+                    <div class="reco-zone-mesures">
                         <span>💧 ${s.humidity_pct?.toFixed(1) || '?'}%</span>
                         <span>🌡️ ${s.temperature_c?.toFixed(1) || '?'}°C</span>
                         <span>⚡ ${s.ec_us_cm?.toFixed(0) || '?'} µS/cm</span>
@@ -536,33 +793,39 @@
                     </div>
 
                     ${zoneConseil.explication ? `
-                    <div style="background:var(--green-010);padding:var(--spacing-sm);border-radius:var(--radius-sm);margin-bottom:var(--spacing-sm)">
-                        <p style="font-size:var(--font-sm);margin:0"><strong>💡 ${zoneConseil.culture_conseillee || ''}</strong> — ${zoneConseil.explication}</p>
-                        ${zoneConseil.action ? `<p style="font-size:var(--font-sm);margin-top:var(--spacing-xs)"><strong>Action:</strong> ${zoneConseil.action}</p>` : ''}
+                    <div class="reco-pourquoi">
+                        <h4>❓ Pourquoi cette recommandation ?</h4>
+                        <p class="reco-pourquoi-text"><strong>💡 ${zoneConseil.culture_conseillee || ''}</strong> — ${zoneConseil.explication}</p>
                     </div>` : ''}
 
-                    <div class="rec-cards">
+                    ${actionLines.length > 0 ? `
+                    <div class="reco-plan-action">
+                        <h4>📋 Plan d'action détaillé :</h4>
+                        <ul>${actionLines.map(l => `<li>${l}</li>`).join('')}</ul>
+                    </div>` : ''}
+
+                    <div class="reco-zone-details">
                         ${npk.N_kg_ha ? `
-                        <div class="rec-card rec-good">
-                            <span class="rec-icon">🧪</span>
-                            <div class="rec-body">
-                                <h4>NPK estimes</h4>
+                        <div class="reco-detail-item">
+                            <span class="reco-detail-icon">🧪</span>
+                            <div>
+                                <strong>NPK estimés</strong>
                                 <p>N = ${npk.N_kg_ha} kg/ha | P₂O₅ = ${npk.P2O5_kg_ha} kg/ha | K₂O = ${npk.K2O_kg_ha} kg/ha</p>
                             </div>
                         </div>` : ''}
-                        <div class="rec-card ${ml.top_score >= 70 ? 'rec-good' : ml.top_score >= 40 ? 'rec-warning' : 'rec-danger'}">
-                            <span class="rec-icon">🌾</span>
-                            <div class="rec-body">
-                                <h4>Top culture: ${top}</h4>
-                                <p>Score: ${ml.top_score}% — ${ranking.slice(0, 3).map(c => `${c.culture} (${c.score}%)`).join(' → ')}</p>
+                        <div class="reco-detail-item ${ml.top_score >= 70 ? 'reco-good' : ml.top_score >= 40 ? 'reco-warning' : 'reco-danger'}">
+                            <span class="reco-detail-icon">🌾</span>
+                            <div>
+                                <strong>Classement</strong>
+                                <p>${ranking.slice(0, 3).map(c => `${c.culture} (${c.score}%)`).join(' → ')}</p>
                             </div>
                         </div>
-                        ${ml.fertilisation?.NPK_recommandation ? `
-                        <div class="rec-card rec-good">
-                            <span class="rec-icon">🌱</span>
-                            <div class="rec-body">
-                                <h4>Fertilisation</h4>
-                                <p>${ml.fertilisation.NPK_recommandation}</p>
+                        ${fertilisationLine ? `
+                        <div class="reco-detail-item reco-good">
+                            <span class="reco-detail-icon">🌱</span>
+                            <div>
+                                <strong>Fertilisation</strong>
+                                <p>${fertilisationLine}</p>
                             </div>
                         </div>` : ''}
                     </div>
@@ -571,7 +834,6 @@
 
         main.innerHTML = html;
 
-        // Language selector → auto-regeneration
         const langSelect = document.getElementById('lang-select');
         if (langSelect) {
             langSelect.addEventListener('change', async function() {
@@ -928,15 +1190,18 @@
         const status = await fetchJSON('/api/mission/status');
         const mapData = await fetchJSON('/api/mission/map');
 
-        const W = mapData?.table?.width_cm || 150;
-        const H = mapData?.table?.height_cm || 100;
         const start = mapData?.start || {x: 10, y: 10, heading_deg: 0};
         const waypoints = mapData?.waypoints || [];
-        const ratio = H / W;
+        const _W = mapData?.table?.width_cm || 150;
+        const _H = mapData?.table?.height_cm || 100;
 
         // ── Helper: coords cm → % dans le rectangle ──
         function cmToPct(cx, cy) {
-            return { left: (cx / W * 100).toFixed(1), bottom: (cy / H * 100).toFixed(1) };
+            // Utilise les dimensions courantes si disponibles, sinon les valeurs initiales
+            const tbl = currentMap && currentMap.table;
+            const w = (tbl && tbl.width_cm) || _W;
+            const h = (tbl && tbl.height_cm) || _H;
+            return { left: (cx / w * 100).toFixed(1), bottom: (cy / h * 100).toFixed(1) };
         }
 
         // ── Rendu waypoint ──
@@ -1016,11 +1281,11 @@
                 <div class="card mission-panel" id="field-map-card">
                     <h3 class="card-toggle"><span class="card-toggle-icon">▼</span> 🗺️ Carte du champ</h3>
                     <div class="fw-controls">
-                        <label>L × <input type="number" id="fw-width" value="${W}" class="fw-input" min="10" max="1000"> cm</label>
-                        <label>H × <input type="number" id="fw-height" value="${H}" class="fw-input" min="10" max="1000"> cm</label>
+                        <label>L × <input type="number" id="fw-width" value="${_W}" class="fw-input" min="10" max="1000"> cm</label>
+                        <label>H × <input type="number" id="fw-height" value="${_H}" class="fw-input" min="10" max="1000"> cm</label>
                         <span style="color:var(--gray-500);font-size:var(--font-xs)">${waypoints.length} point(s)</span>
                     </div>
-                    <div class="fw-container" id="fw-container" style="aspect-ratio:${W}/${H}">
+                    <div class="fw-container" id="fw-container" style="aspect-ratio:${_W}/${_H}">
                         ${startHtml}
                         ${waypoints.map(w => wpHtml(w)).join('')}
                     </div>
@@ -1165,7 +1430,7 @@
         let currentMap = {...(mapData || {})};
         if (!currentMap.waypoints) currentMap.waypoints = [...waypoints];
         if (!currentMap.start) currentMap.start = {...start};
-        if (!currentMap.table) currentMap.table = {width_cm: W, height_cm: H};
+        if (!currentMap.table) currentMap.table = {width_cm: _W, height_cm: _H};
 
         const container = document.getElementById('fw-container');
 
@@ -1436,35 +1701,473 @@
     }
 
     // ══════════════════════════════════════════════════════════════
+    // PAGE: Paramètres
+    function renderSettings(main) {
+        const tiles = [
+            { icon: '🧪', title: 'Analyse manuelle', desc: 'Saisir des valeurs sol manuellement', page: 'analyze' },
+            { icon: '🤖', title: 'Mission', desc: 'Lancer une mission robot', page: 'mission' },
+            { icon: '🩺', title: 'Doctor', desc: 'Diagnostic et auto-réparation', page: 'doctor' },
+            { icon: '📚', title: 'Base de réf.', desc: 'Consulter la base agricole', page: 'base-ref' },
+            { icon: '🧠', title: 'Modèles ML', desc: 'Gérer les modèles entraînés', page: 'models' },
+            { icon: '📡', title: 'Réseau', desc: 'Infos connexion et IP', page: 'network' },
+            { icon: '📧', title: 'Email SMTP', desc: 'Configurer l\'envoi par email', page: 'email-config' },
+            { icon: '👤', title: 'Mon compte', desc: 'Modifier mot de passe', page: 'account' },
+            { icon: '💾', title: 'Sauvegardes', desc: 'Gérer les backups', page: 'backups' },
+        ];
+
+        main.innerHTML = `
+            <div class="settings-page">
+                <h2 style="margin-bottom:var(--spacing-lg)">⚙️ Paramètres</h2>
+                <div class="settings-grid">
+                    ${tiles.map(t => `
+                        <div class="settings-tile" data-page="${t.page}">
+                            <div class="tile-icon">${t.icon}</div>
+                            <div class="tile-title">${t.title}</div>
+                            <div class="tile-desc">${t.desc}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+
+        main.querySelectorAll('.settings-tile').forEach(el => {
+            el.addEventListener('click', () => navigate(el.dataset.page));
+        });
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // PAGE: Réseau
+    async function renderNetwork(main) {
+        main.innerHTML = `<div class="page-loading">🔄 Chargement des infos réseau...</div>`;
+        try {
+            const resp = await fetch('/api/network/ip');
+            const data = await resp.json();
+            main.innerHTML = `
+                <div class="settings-page">
+                    <h2 style="margin-bottom:var(--spacing-lg)">📡 Réseau</h2>
+                    <div class="settings-grid" style="grid-template-columns:1fr">
+                        <div class="settings-tile" style="cursor:default;text-align:left;padding:var(--spacing-lg)">
+                            <div style="font-size:var(--font-sm);color:var(--gray-500);margin-bottom:var(--spacing-md)">Connexion locale</div>
+                            <div style="display:grid;grid-template-columns:auto 1fr;gap:var(--spacing-sm) var(--spacing-md);font-size:var(--font-sm)">
+                                <span style="color:var(--gray-500)">🌐 Adresse IP</span>
+                                <span style="font-family:monospace;font-size:1.1em">${data.ip}</span>
+                                <span style="color:var(--gray-500)">💻 Hostname</span>
+                                <span style="font-family:monospace">${data.hostname}</span>
+                                <span style="color:var(--gray-500)">🔗 URL</span>
+                                <span style="font-family:monospace"><a href="${data.url}" target="_blank">${data.url}</a></span>
+                                <span style="color:var(--gray-500)">📡 mDNS</span>
+                                <span style="font-family:monospace">${data.mdns}</span>
+                                <span style="color:var(--gray-500)">🔌 Port</span>
+                                <span style="font-family:monospace">5000</span>
+                            </div>
+                            <div style="margin-top:var(--spacing-md);padding-top:var(--spacing-md);border-top:1px solid var(--gray-200)">
+                                <p style="font-size:var(--font-xs);color:var(--gray-500)">Connecte-toi depuis un autre appareil sur le même réseau WiFi.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="data-export-btn" onclick="navigate('settings')" style="margin-top:var(--spacing-md)">⬅️ Retour</button>
+                </div>`;
+        } catch (e) {
+            main.innerHTML = `<div class="settings-page"><h2>📡 Réseau</h2><p style="color:var(--red)">Erreur : ${e.message}</p><button class="data-export-btn" onclick="navigate('settings')" style="margin-top:var(--spacing-md)">⬅️ Retour</button></div>`;
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // PAGE: Email SMTP
+    async function renderEmailConfig(main) {
+        main.innerHTML = `<div class="page-loading">🔄 Chargement...</div>`;
+        try {
+            const resp = await fetch('/api/mission/email-config');
+            const cfg = await resp.json();
+            main.innerHTML = `
+                <div class="settings-page">
+                    <h2 style="margin-bottom:var(--spacing-lg)">📧 Email SMTP</h2>
+                    <div class="settings-grid" style="grid-template-columns:1fr">
+                        <div class="settings-tile" style="cursor:default;text-align:left;padding:var(--spacing-lg)">
+                            <div style="font-size:var(--font-sm);color:var(--gray-500);margin-bottom:var(--spacing-md)">Configuration du serveur SMTP</div>
+                            <div style="display:grid;grid-template-columns:1fr;gap:var(--spacing-sm)">
+                                <label style="font-size:var(--font-xs);color:var(--gray-500)">Serveur SMTP</label>
+                                <input id="smtp-server" class="fw-input" value="${cfg.smtp_server || 'smtp.gmail.com'}" style="width:100%">
+                                <label style="font-size:var(--font-xs);color:var(--gray-500)">Port</label>
+                                <input id="smtp-port" class="fw-input" value="${cfg.smtp_port || 587}" type="number" style="width:100%">
+                                <label style="font-size:var(--font-xs);color:var(--gray-500)">Utilisateur</label>
+                                <input id="smtp-user" class="fw-input" value="${cfg.smtp_user || ''}" style="width:100%">
+                                <label style="font-size:var(--font-xs);color:var(--gray-500)">Mot de passe</label>
+                                <input id="smtp-pass" class="fw-input" type="password" placeholder="●●●●●●●●" style="width:100%">
+                                <label style="font-size:var(--font-xs);color:var(--gray-500)">Email destinataire</label>
+                                <input id="smtp-recipient" class="fw-input" value="${cfg.recipient_email || ''}" style="width:100%">
+                            </div>
+                            <div style="display:flex;gap:var(--spacing-sm);margin-top:var(--spacing-md)">
+                                <button class="data-export-btn primary" onclick="saveEmailConfig()">💾 Sauvegarder</button>
+                                <button class="data-export-btn" onclick="testEmailConfig()">📤 Tester</button>
+                            </div>
+                            <div id="email-status" style="margin-top:var(--spacing-sm);font-size:var(--font-xs)"></div>
+                        </div>
+                    </div>
+                    <button class="data-export-btn" onclick="navigate('settings')" style="margin-top:var(--spacing-md)">⬅️ Retour</button>
+                </div>`;
+        } catch (e) {
+            main.innerHTML = `<div class="settings-page"><h2>📧 Email SMTP</h2><p style="color:var(--red)">Erreur : ${e.message}</p><button class="data-export-btn" onclick="navigate('settings')" style="margin-top:var(--spacing-md)">⬅️ Retour</button></div>`;
+        }
+    }
+
+    window.saveEmailConfig = async function () {
+        const data = {
+            smtp_server: document.getElementById('smtp-server').value,
+            smtp_port: parseInt(document.getElementById('smtp-port').value) || 587,
+            smtp_user: document.getElementById('smtp-user').value,
+            smtp_password: document.getElementById('smtp-pass').value,
+            recipient_email: document.getElementById('smtp-recipient').value,
+        };
+        const status = document.getElementById('email-status');
+        status.textContent = '💾 Sauvegarde...';
+        try {
+            const resp = await fetch('/api/mission/email-config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+            const result = await resp.json();
+            status.textContent = result.success ? '✅ Configuration sauvegardée' : '❌ ' + (result.error || 'Erreur');
+            status.style.color = result.success ? 'var(--green)' : 'var(--red)';
+        } catch (e) {
+            status.textContent = '❌ ' + e.message;
+            status.style.color = 'var(--red)';
+        }
+    };
+
+    window.testEmailConfig = async function () {
+        const status = document.getElementById('email-status');
+        status.textContent = '📤 Envoi test...';
+        status.style.color = 'var(--gray-500)';
+        try {
+            const resp = await fetch('/api/mission/test-email', { method: 'POST' });
+            const result = await resp.json();
+            status.textContent = result.success ? '✅ Email test envoyé !' : '❌ ' + (result.error || 'Échec');
+            status.style.color = result.success ? 'var(--green)' : 'var(--red)';
+        } catch (e) {
+            status.textContent = '❌ ' + e.message;
+            status.style.color = 'var(--red)';
+        }
+    };
+
+    // ══════════════════════════════════════════════════════════════
+    // PAGE: Mon compte
+    async function renderAccount(main) {
+        main.innerHTML = `
+            <div class="settings-page">
+                <h2 style="margin-bottom:var(--spacing-lg)">👤 Mon compte</h2>
+                <div class="settings-grid" style="grid-template-columns:1fr">
+                    <div class="settings-tile" style="cursor:default;text-align:left;padding:var(--spacing-lg)">
+                        <div style="font-size:var(--font-sm);color:var(--gray-500);margin-bottom:var(--spacing-md)">Changer le mot de passe</div>
+                        <div style="display:grid;grid-template-columns:1fr;gap:var(--spacing-sm)">
+                            <label style="font-size:var(--font-xs);color:var(--gray-500)">Nouveau mot de passe</label>
+                            <input id="new-password" class="fw-input" type="password" placeholder="Nouveau mot de passe" style="width:100%">
+                            <label style="font-size:var(--font-xs);color:var(--gray-500)">Confirmer</label>
+                            <input id="confirm-password" class="fw-input" type="password" placeholder="Confirmer" style="width:100%">
+                        </div>
+                        <button class="data-export-btn primary" onclick="changePassword()" style="margin-top:var(--spacing-md)">🔑 Changer le mot de passe</button>
+                        <div id="account-status" style="margin-top:var(--spacing-sm);font-size:var(--font-xs)"></div>
+                    </div>
+                    <div class="settings-tile" style="cursor:default;text-align:left;padding:var(--spacing-lg)">
+                        <div style="font-size:var(--font-sm);color:var(--gray-500);margin-bottom:var(--spacing-md)">Session</div>
+                        <button class="data-export-btn" onclick="logoutAccount()" style="margin-top:var(--spacing-sm)">🚪 Déconnexion</button>
+                    </div>
+                </div>
+                <button class="data-export-btn" onclick="navigate('settings')" style="margin-top:var(--spacing-md)">⬅️ Retour</button>
+            </div>`;
+    }
+
+    window.changePassword = async function () {
+        const pwd = document.getElementById('new-password').value;
+        const confirm = document.getElementById('confirm-password').value;
+        const status = document.getElementById('account-status');
+        if (!pwd || pwd.length < 4) {
+            status.textContent = '❌ Mot de passe trop court (min 4 caractères)';
+            status.style.color = 'var(--red)';
+            return;
+        }
+        if (pwd !== confirm) {
+            status.textContent = '❌ Les mots de passe ne correspondent pas';
+            status.style.color = 'var(--red)';
+            return;
+        }
+        status.textContent = '🔑 Mise à jour...';
+        try {
+            const resp = await fetch('/api/auth/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: pwd }),
+            });
+            const result = await resp.json();
+            status.textContent = result.success ? '✅ Mot de passe changé !' : '❌ ' + (result.error || 'Erreur');
+            status.style.color = result.success ? 'var(--green)' : 'var(--red)';
+            if (result.success) {
+                document.getElementById('new-password').value = '';
+                document.getElementById('confirm-password').value = '';
+            }
+        } catch (e) {
+            status.textContent = '❌ ' + e.message;
+            status.style.color = 'var(--red)';
+        }
+    };
+
+    window.logoutAccount = function () {
+        if (confirm('Déconnexion ?')) {
+            window.location.href = '/logout';
+        }
+    };
+
+    // ══════════════════════════════════════════════════════════════
+    // PAGE: Sauvegardes
+    async function renderBackups(main) {
+        main.innerHTML = `<div class="page-loading">🔄 Chargement des sauvegardes...</div>`;
+        try {
+            const resp = await fetch('/api/mission/backups');
+            const data = await resp.json();
+            const backups = data.backups || [];
+            main.innerHTML = `
+                <div class="settings-page">
+                    <h2 style="margin-bottom:var(--spacing-lg)">💾 Sauvegardes</h2>
+                    <div class="settings-grid" style="grid-template-columns:1fr">
+                        <div class="settings-tile" style="cursor:default;text-align:left;padding:var(--spacing-lg)">
+                            <div style="display:flex;gap:var(--spacing-sm);margin-bottom:var(--spacing-md)">
+                                <button class="data-export-btn primary" onclick="createBackup()">💾 Créer une sauvegarde</button>
+                            </div>
+                            <div id="backup-status" style="font-size:var(--font-xs);margin-bottom:var(--spacing-sm)"></div>
+                            ${backups.length === 0 ? '<p style="font-size:var(--font-xs);color:var(--gray-500)">Aucune sauvegarde pour le moment.</p>' : `
+                            <div style="font-size:var(--font-sm);color:var(--gray-500);margin-bottom:var(--spacing-sm)">Sauvegardes existantes (${backups.length})</div>
+                            <div style="display:grid;gap:var(--spacing-xs)">
+                                ${backups.map(b => `
+                                <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--spacing-xs) var(--spacing-sm);background:var(--gray-100);border-radius:var(--radius-sm);font-size:var(--font-xs)">
+                                    <div>
+                                        <strong>${b.original}</strong>
+                                        <span style="color:var(--gray-500);margin-left:var(--spacing-xs)">— ${b.timestamp}</span>
+                                        <span style="color:var(--gray-500);margin-left:var(--spacing-xs)">(${(b.size / 1024).toFixed(1)} KB)</span>
+                                    </div>
+                                    <button class="data-export-btn" style="padding:2px 8px;font-size:var(--font-xs)" onclick="restoreBackup('${b.name}')">Restaurer</button>
+                                </div>`).join('')}
+                            </div>`}
+                        </div>
+                    </div>
+                    <button class="data-export-btn" onclick="navigate('settings')" style="margin-top:var(--spacing-md)">⬅️ Retour</button>
+                </div>`;
+        } catch (e) {
+            main.innerHTML = `<div class="settings-page"><h2>💾 Sauvegardes</h2><p style="color:var(--red)">Erreur : ${e.message}</p><button class="data-export-btn" onclick="navigate('settings')" style="margin-top:var(--spacing-md)">⬅️ Retour</button></div>`;
+        }
+    }
+
+    window.createBackup = async function () {
+        const status = document.getElementById('backup-status');
+        status.textContent = '💾 Création...';
+        status.style.color = 'var(--gray-500)';
+        try {
+            const resp = await fetch('/api/mission/backup', { method: 'POST' });
+            const result = await resp.json();
+            if (result.success) {
+                status.textContent = '✅ Sauvegarde créée : ' + (result.backups || []).join(', ');
+                status.style.color = 'var(--green)';
+                // Re-render
+                const main = document.getElementById('main-content');
+                if (main) renderBackups(main);
+            } else {
+                status.textContent = '❌ ' + (result.error || 'Erreur');
+                status.style.color = 'var(--red)';
+            }
+        } catch (e) {
+            status.textContent = '❌ ' + e.message;
+            status.style.color = 'var(--red)';
+        }
+    };
+
+    window.restoreBackup = async function (name) {
+        if (!confirm(`Restaurer ${name} ? La configuration actuelle sera remplacée.`)) return;
+        const status = document.getElementById('backup-status');
+        status.textContent = '🔄 Restauration...';
+        try {
+            const resp = await fetch('/api/mission/restore', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ backup: name }),
+            });
+            const result = await resp.json();
+            status.textContent = result.success ? '✅ Restauré : ' + result.restored : '❌ ' + (result.error || 'Erreur');
+            status.style.color = result.success ? 'var(--green)' : 'var(--red)';
+        } catch (e) {
+            status.textContent = '❌ ' + e.message;
+            status.style.color = 'var(--red)';
+        }
+    };
+
+    // ══════════════════════════════════════════════════════════════
     // PAGE: Données
     async function renderData(main, waypoints) {
         const photosResp = await fetchJSON('/api/results');
-        const allPhotos = [];
-        (photosResp?.waypoints || []).forEach(wp => {
-            (wp.photos || []).forEach(p => {
-                allPhotos.push({ wp: wp.waypoint_id, path: p });
-            });
-        });
+        const allWaypoints = photosResp?.waypoints || [];
 
-        const gallery = allPhotos.length ? `
-            <div class="section">
-                <h2>📸 Galerie (${allPhotos.length} photos)</h2>
-                <div class="photo-grid">
-                    ${allPhotos.map(p => `
-                        <div class="photo-card" onclick="window.open('/photos/${encodeURIComponent(p.path.split('/').pop())}', '_blank')">
-                            <img src="/photos/${encodeURIComponent(p.path.split('/').pop())}" alt="WP${p.wp}" loading="lazy">
-                        </div>`).join('')}
+        // ── Stats ──
+        const totalPoints = allWaypoints.length;
+        const totalPhotos = allWaypoints.reduce((sum, wp) => sum + (wp.photos || []).length, 0);
+        const totalMesures = allWaypoints.filter(wp => wp.sensor).length;
+        const totalRecos = totalMesures; // one reco per measured zone
+
+        // ── Photos grouped by zone ──
+        const photoGroups = allWaypoints.map(wp => ({
+            wp: wp.waypoint_id,
+            photos: (wp.photos || []).map(p => p.split('/').pop()),
+        })).filter(g => g.photos.length > 0);
+
+        // ── Measures ──
+        const measures = allWaypoints.filter(wp => wp.sensor);
+
+        // ── Build tree data ──
+        const missionDate = results?.metadata?.date || results?.timestamp
+            ? new Date(results?.metadata?.date || results?.timestamp).toLocaleDateString('fr-FR')
+            : '—';
+
+        function treeNodeHtml(wp) {
+            const s = wp.sensor || {};
+            const hasSensor = s.humidity_pct !== undefined;
+            const photoCount = (wp.photos || []).length;
+            return `
+                <div class="data-tree-node">
+                    <div class="data-tree-toggle" onclick="this.classList.toggle('open'); this.nextElementSibling.classList.toggle('open')">
+                        <span class="arrow">▶</span>
+                        📍 Point ${wp.waypoint_id}
+                    </div>
+                    <div class="data-tree-children">
+                        ${hasSensor ? `
+                        <div class="data-tree-leaf"><span class="leaf-icon">📏</span> Mesures — 💧 ${s.humidity_pct?.toFixed(1) || '?'}% · 🌡️ ${s.temperature_c?.toFixed(1) || '?'}°C · ⚡ ${s.ec_us_cm?.toFixed(0) || '?'} · 🧪 pH ${s.ph?.toFixed(1) || '?'}</div>` : ''}
+                        ${photoCount > 0 ? `
+                        <div class="data-tree-leaf"><span class="leaf-icon">📸</span> Photos (${photoCount})</div>` : ''}
+                        ${hasSensor ? `
+                        <div class="data-tree-leaf"><span class="leaf-icon">🌾</span> Recommandation disponible</div>` : ''}
+                    </div>
+                </div>`;
+        }
+
+        let html = `
+            <h1>📸 Mes données</h1>
+
+            <div class="data-hero">
+                <div class="data-hero-item">
+                    <div class="data-hero-num">${totalPoints}</div>
+                    <div class="data-hero-label">📍 Points</div>
                 </div>
-            </div>` : '';
+                <div class="data-hero-item">
+                    <div class="data-hero-num">${totalPhotos}</div>
+                    <div class="data-hero-label">📸 Photos</div>
+                </div>
+                <div class="data-hero-item">
+                    <div class="data-hero-num">${totalMesures}</div>
+                    <div class="data-hero-label">🧪 Mesures</div>
+                </div>
+                <div class="data-hero-item">
+                    <div class="data-hero-num">${totalRecos}</div>
+                    <div class="data-hero-label">🌾 Recos</div>
+                </div>
+            </div>`;
 
-        const jsonBlock = results ? `
-            <div class="section">
-                <h2>📄 JSON Brut</h2>
-                <div class="json-block"><code>${JSON.stringify(results, null, 2)}</code></div>
-            </div>` : '';
+        // ── Photos section ──
+        if (photoGroups.length > 0) {
+            html += `
+            <div class="data-section">
+                <h3>📸 1. Photos du sol</h3>
+                <div class="data-photo-groups">
+                    ${photoGroups.map(g => `
+                    <div class="data-photo-group">
+                        <h4>📍 Zone ${g.wp} (${g.photos.length} photos)</h4>
+                        <div class="data-photo-thumbs">
+                            ${g.photos.map(fname => `
+                            <img src="/photos/${encodeURIComponent(fname)}" alt="WP${g.wp}" loading="lazy"
+                                 onclick="window.open('/photos/${encodeURIComponent(fname)}', '_blank')">
+                            `).join('')}
+                        </div>
+                    </div>`).join('')}
+                </div>
+            </div>`;
+        }
 
-        main.innerHTML = `<h1>📁 Données</h1>${gallery}${jsonBlock}`;
+        // ── Measures section ──
+        if (measures.length > 0) {
+            html += `
+            <div class="data-section">
+                <h3>🧪 2. Mesures du sol</h3>
+                <div class="data-measures">
+                    ${measures.map(wp => {
+                        const s = wp.sensor || {};
+                        const vision = wp.vision_analysis || {};
+                        const visionText = vision.vegetation_pct !== undefined
+                            ? `🖼️ ${vision.vegetation_pct}% végétation, ${vision.sol_nu_pct || 0}% sol nu`
+                            : '';
+                        return `
+                        <div class="data-measure-card">
+                            <h4>📍 Zone ${wp.waypoint_id} ${wp.coords ? `(x=${wp.coords.x}, y=${wp.coords.y})` : ''}</h4>
+                            <div class="data-measure-grid">
+                                <span>💧 ${s.humidity_pct?.toFixed(1) || '?'}%</span>
+                                <span>🌡️ ${s.temperature_c?.toFixed(1) || '?'}°C</span>
+                                <span>⚡ ${s.ec_us_cm?.toFixed(0) || '?'}</span>
+                                <span>🧪 pH ${s.ph?.toFixed(1) || '?'}</span>
+                            </div>
+                            ${visionText ? `<p class="data-measure-vision">${visionText}</p>` : ''}
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>`;
+        }
+
+        // ── Tree view ──
+        html += `
+            <div class="data-section">
+                <h3>📁 3. Données brutes</h3>
+                <p style="font-size:var(--font-xs);color:var(--gray-500);margin:0 0 var(--spacing-sm)">
+                    Mission du ${missionDate} — ${totalPoints} point${totalPoints > 1 ? 's' : ''}
+                </p>
+                <div class="data-tree">
+                    ${allWaypoints.map(wp => treeNodeHtml(wp)).join('')}
+                </div>
+                <div style="display:flex;gap:var(--spacing-xs);margin-top:var(--spacing-sm)">
+                    <a href="/api/data/export?format=json" class="data-export-btn" download>⬇️ Télécharger JSON</a>
+                    <a href="/api/data/export?format=csv" class="data-export-btn" download>⬇️ Télécharger CSV</a>
+                </div>
+            </div>`;
+
+        // ── Export section ──
+        html += `
+            <div class="data-section">
+                <h3>📤 4. Exporter</h3>
+                <div class="data-export">
+                    <a href="/api/data/export?format=json" class="data-export-btn" download>⬇️ JSON</a>
+                    <a href="/api/data/export?format=csv" class="data-export-btn" download>⬇️ CSV</a>
+                    <a href="/api/data/export?format=zip" class="data-export-btn primary" download>⬇️ ZIP (photos + données)</a>
+                    <a href="/api/data/export?format=db" class="data-export-btn" download>🗄️ Base SQLite (.db)</a>
+                    <button class="data-export-btn" onclick="exportEmail()">📤 Envoyer par email</button>
+                </div>
+            </div>`;
+
+        main.innerHTML = html;
     }
+
+    // ── Email export ─────────────────────────────────────────────
+    window.exportEmail = async function () {
+        const email = prompt('Adresse email de destination :');
+        if (!email) return;
+        try {
+            const resp = await fetch('/api/data/email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+            });
+            const data = await resp.json();
+            if (data.error) {
+                alert('Erreur : ' + data.error);
+            } else {
+                alert('✅ Données envoyées à ' + email);
+            }
+        } catch (e) {
+            alert('Erreur réseau : ' + e.message);
+        }
+    };
 
     // ── Init ─────────────────────────────────────────────────────
     const hash = location.hash.replace('#', '') || 'dashboard';
